@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BlockDict } from './Blocks';
+import { BlockDict } from '../Blocks';
 
 export class ChunkRenderer {
     constructor(scene, geometryFactory, material, size) {
