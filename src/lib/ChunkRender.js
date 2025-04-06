@@ -7,13 +7,14 @@ export class ChunkRenderer {
         this.factory = geometryFactory;
         this.material = material;
         this.size = size;
+        this.maxHeight = 128;
     }
 
     render(chunk, cx, cz) {
         const counts = new Array(10).fill(0);
 
         for (let x = 0; x < this.size; x++) {
-            for (let y = 0; y < this.size; y++) {
+            for (let y = 0; y < this.maxHeight; y++) {
                 for (let z = 0; z < this.size; z++) {
                     const b = chunk.blocks[x][y][z];
                     if (b !== 0) counts[b]++;
@@ -40,7 +41,7 @@ export class ChunkRenderer {
         const matrix = new THREE.Matrix4();
 
         for (let x = 0; x < this.size; x++) {
-            for (let y = 0; y < this.size; y++) {
+            for (let y = 0; y < this.maxHeight; y++) {
                 for (let z = 0; z < this.size; z++) {
                     const id = chunk.blocks[x][y][z];
                     if (!meshes[id]) continue;

@@ -31,25 +31,35 @@ const material = new THREE.MeshBasicMaterial({ map: texture });
 
 const world = new WorldBiomes(scene, factory, material);
 
-// const rendererChunk = new ChunkRenderer(scene, factory, material, 32);
-
-// const chunk = new Chunk(0, 0, 32, 30, 10);
-// const chunk1 = new Chunk(1, 1, 32, 30, 10);
-// const chunk2 = new Chunk(0, 1, 32, 30, 10);
-// const chunk3 = new Chunk(1, 0, 32, 30, 10);
-// rendererChunk.render(chunk, 0, 0);
-// rendererChunk.render(chunk1, 1, 1)
-// rendererChunk.render(chunk2, 0, 1);
-// rendererChunk.render(chunk3, 1, 0);
-
 const player = new Player(scene, camera);
 const clock = new THREE.Clock();
 
+let lastDebugChunkX = null;
+let lastDebugChunkZ = null;
+
+function debugChunkPosition(player, world) {
+    const pos = player.position;
+    const chunkSize = world.chunkSize;
+    const cx = Math.floor(pos.x / chunkSize);
+    const cz = Math.floor(pos.z / chunkSize);
+
+    if (cx !== lastDebugChunkX || cz !== lastDebugChunkZ) {
+        lastDebugChunkX = cx;
+        lastDebugChunkZ = cz;
+
+        const wx = cx * chunkSize;
+        const wz = cz * chunkSize;
+        const biome = world.getBiome(wx, wz);
+
+        console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
+    }
+}
 
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     player.update(delta, 1);
+    debugChunkPosition(player, world)
     renderer.render(scene, camera);
 }
 animate();

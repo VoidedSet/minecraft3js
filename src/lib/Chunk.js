@@ -1,17 +1,19 @@
 import { makeNoise2D } from 'open-simplex-noise';
 
 export class Chunk {
-    constructor(cx, cz, size, heightScale, waterLevel, noise) {
+    constructor(cx, cz, size, chunkNoise, subBiomeMap) {
         this.cx = cx;
         this.cz = cz;
         this.size = size;
-        this.heightScale = heightScale;
-        this.waterLevel = waterLevel;
-        this.maxHeight = heightScale + 20; // Add buffer to avoid overflow
-        this.blocks = this._generate(noise);
+        this.maxHeight = 128;
+        this.chunkNoise = chunkNoise;
+        this.subBiomeMap = subBiomeMap;
+        this.seaLevel = 11;
+
+        this.blocks = this._generate();
     }
 
-    _generate(noise) {
+    _generate() {
         const CHUNK = Array(this.size).fill().map(() =>
             Array(this.maxHeight).fill().map(() =>
                 Array(this.size).fill(0)
@@ -23,9 +25,31 @@ export class Chunk {
                 const wx = this.cx * this.size + x;
                 const wz = this.cz * this.size + z;
 
-                const height = Math.floor((noise(wx * 0.1, wz * 0.1) + 1) / 2 * this.heightScale);
-                const stoneDepth = Math.floor((noise(wx * 0.2, wz * 0.2) + 1) * 1.5) + 1;
-                console.log("x: ", x, "height / noise", height)
+                const biomeVal = this.subBiomeMap?.[wx]?.[wz] ?? 0;
+                const { heightScale, waterLevel } = this.getBiomeParams(biomeVal);
+
+                // Multi-octave noise
+                const baseFreq = 0.01;
+                const octaves = 4;
+                const persistence = 0.5;
+                const lacunarity = 2.0;
+
+                let amp = 1;
+                let freq = baseFreq;
+                let noiseVal = 0;
+                let maxAmp = 0;
+
+                for (let i = 0; i < octaves; i++) {
+                    noiseVal += this.chunkNoise(wx * freq, wz * freq) * amp;
+                    maxAmp += amp;
+                    amp *= persistence;
+                    freq *= lacunarity;
+                }
+
+                noiseVal = (noiseVal / maxAmp + 1) / 2; // Normalize to [0,1]
+                const height = Math.floor(noiseVal * heightScale);
+                const stoneDepth = Math.floor(noiseVal + 1);
+
                 for (let y = 0; y <= height; y++) {
                     let block = 0;
                     if (y === height) block = 1; // grass
@@ -39,7 +63,7 @@ export class Chunk {
                     CHUNK[x][y][z] = block;
                 }
 
-                for (let y = 0; y <= this.waterLevel; y++) {
+                for (let y = 0; y <= waterLevel; y++) {
                     if (CHUNK[x][y][z] === 0) CHUNK[x][y][z] = 3; // water
                     else if (CHUNK[x][y][z] === 1) CHUNK[x][y][z] = 6; // sand
                 }
@@ -48,6 +72,35 @@ export class Chunk {
 
         return CHUNK;
     }
+    lerp(a, b, t) {
+        return a * (1 - t) + b * t;
+    }
+
+
+    getBiomeParams(biomeValue) {
+        // biomeValue in range [-1, 1]
+        const value = (biomeValue + 1) / 2; // Normalize to [0, 1]
+
+        // Instead of hard-coded steps, use smooth interpolation
+        let heightScale, waterLevel;
+
+        if (value < 0.3) {
+            // Ocean
+            heightScale = this.lerp(12, 15, value / 0.3);  // shallow ocean to deep ocean
+            waterLevel = 12;
+        } else if (value < 0.6) {
+            // Plains
+            heightScale = this.lerp(15, 25, (value - 0.3) / 0.3);  // gentle rolling hills
+            waterLevel = 9;
+        } else {
+            // Mountains
+            heightScale = this.lerp(30, 50, (value - 0.6) / 0.4);  // steeper rise
+            waterLevel = 6;
+        }
+
+        return { heightScale, waterLevel };
+    }
+
 
     returnBlockID(playerPos) {
         const pX = Math.floor(playerPos.x) % this.size;

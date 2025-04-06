@@ -68,6 +68,7 @@ export class Player {
                     if (this.canJump) {
                         this.velocity.y += 350;
                         this.canJump = false;
+                        console.log(this.controls.object.position)
                     }
                     break;
                 case 'ShiftLeft':
