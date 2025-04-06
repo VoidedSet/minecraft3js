@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { BlockAtlas } from './lib/Blocks.js';
 import { BlockGeometryFactory } from './lib/BlockGeometryFactory.js';
 import { Player } from './lib/PlayerMovement.js';
-import WorldBiomes from './lib/world.js';
 import ChunkManager from './lib/chunks/ChunkManager.js';
+import WorldBiomes from './lib/world.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -32,27 +32,10 @@ const world = new WorldBiomes(scene, factory, material);
 const player = new Player(scene, camera);
 const clock = new THREE.Clock();
 
-const chunkManager = new ChunkManager(world.chunkSize, 2, world);
-// let lastDebugChunkX = null;
-// let lastDebugChunkZ = null;
+const chunkManager = new ChunkManager(world.chunkSize, 4, world);
 
-// function onChunkChange(player, world) {
-//     const pos = player.position;
-//     const chunkSize = world.chunkSize;
-//     const cx = Math.floor(pos.x / chunkSize);
-//     const cz = Math.floor(pos.z / chunkSize);
-
-//     if (cx !== lastDebugChunkX || cz !== lastDebugChunkZ) {
-//         lastDebugChunkX = cx;
-//         lastDebugChunkZ = cz;
-
-//         const wx = cx * chunkSize;
-//         const wz = cz * chunkSize;
-//         const biome = world.getBiome(wx, wz);
-
-//         console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
-//     }
-// }
+scene.fog = new THREE.FogExp2(0x87ceeb, 0.015); // sky blue, tweak density
+renderer.setClearColor(0x87ceeb);
 
 function animate() {
     requestAnimationFrame(animate);

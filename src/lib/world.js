@@ -1,7 +1,6 @@
 import { makeNoise2D } from "open-simplex-noise";
 import { Chunk } from "./chunks/Chunk";
 import { ChunkRenderer } from "./chunks/ChunkRender";
-import { mapLinear } from "three/src/math/MathUtils.js";
 
 export default class WorldBiomes {
     constructor(scene, factory, material) {
@@ -10,11 +9,11 @@ export default class WorldBiomes {
         this.material = material;
 
         this.chunkSize = 16;
-        this.numChunks = 16;
+        this.numChunks = 2;
         this.waterLevel = 10;
         this.maxHeight = 128;
 
-        this.biomeNoise = makeNoise2D(Date.now());
+        this.biomeNoise = makeNoise2D(Date.now() * 2);
         this.chunkHeightNoise = makeNoise2D(Date.now() + 1);
 
         this.biomeMap = [];
@@ -108,8 +107,8 @@ export default class WorldBiomes {
     }
 
     genChunks(cx, cz) {
-        for (let dx = -1; dx <= 1; dx++) {
-            for (let dz = -1; dz <= 1; dz++) {
+        for (let dx = -1; dx <= 2; dx++) {
+            for (let dz = -2; dz <= 1; dz++) {
                 const nx = cx + dx;
                 const nz = cz + dz;
                 const key = `${nx},${nz}`;

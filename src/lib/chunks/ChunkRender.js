@@ -38,6 +38,8 @@ export class ChunkRenderer {
             meshes[id] = { mesh, index: 0, block: entry }; // Optionally keep the block data here too
         }
 
+        chunk.meshes = meshes;
+
         const matrix = new THREE.Matrix4();
 
         for (let x = 0; x < this.size; x++) {

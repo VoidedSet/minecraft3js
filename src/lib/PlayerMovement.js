@@ -16,6 +16,7 @@ export class Player {
         // UI elements
         const blocker = document.getElementById('blocker');
         const instructions = document.getElementById('instructions');
+        const crosshair = document.getElementById('crosshair')
 
         instructions.addEventListener('click', () => {
             this.controls.lock();
@@ -24,11 +25,13 @@ export class Player {
         this.controls.addEventListener('lock', () => {
             instructions.style.display = 'none';
             blocker.style.display = 'none';
+            crosshair.style.display = 'block';
         });
 
         this.controls.addEventListener('unlock', () => {
             blocker.style.display = 'block';
             instructions.style.display = '';
+            crosshair.style.display = 'none';
         });
 
         scene.add(this.controls.object);
@@ -41,6 +44,11 @@ export class Player {
         this.moveLeft = false;
         this.moveRight = false;
         this.canJump = false;
+
+        this.selectedSlot = 0; // default to first slot
+        this.maxSlots = 9;
+        this.updateHotbarUI();
+        this.initHotbarScroll();
 
         this.initInput();
     }
@@ -97,6 +105,25 @@ export class Player {
                     break;
             }
         });
+    }
+    initHotbarScroll() {
+        window.addEventListener('wheel', (event) => {
+            if (event.deltaY > 0) {
+                this.selectedSlot = (this.selectedSlot + 1) % this.maxSlots;
+            } else {
+                this.selectedSlot = (this.selectedSlot - 1 + this.maxSlots) % this.maxSlots;
+            }
+            this.updateHotbarUI();
+        });
+    }
+    updateHotbarUI() {
+        for (let i = 0; i < this.maxSlots; i++) {
+            const slot = document.getElementById(`slot${i + 1}`);
+            if (slot) {
+                slot.style.borderWidth = i === this.selectedSlot ? "3px" : "2px";
+                slot.style.borderColor = i === this.selectedSlot ? "black" : "white";
+            }
+        }
     }
 
     update(delta, blockId) {

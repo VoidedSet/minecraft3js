@@ -34,11 +34,23 @@
             font-size: 14px;
             cursor: pointer;
         }
+
+        .slots {
+            flex: 1;
+            /* each slot takes equal space */
+            height: 100%;
+            border: 2px solid white;
+            margin: 0 1px;
+            /* small space between slots */
+            box-sizing: border-box;
+            background-color: rgba(0, 0, 0, 0.2);
+            /* optional */
+        }
     </style>
 </head>
 
 <body>
-    <div id="blocker">
+    <div id="blocker" style="z-index: 3;">
         <div id="instructions">
             <p style="font-size:36px">
                 Click to play
@@ -51,7 +63,25 @@
         </div>
     </div>
 
-    <script type="module" src="src/main.js"></script>
+    <div id="crosshair"
+        style="position: fixed; left: 50%; top: 50%; color: white; mix-blend-mode: difference; z-index: 2;">
+        <b style="font-size: 1.2em;">+</b>
+    </div>
+    <div id="hotbar"
+        style="position: fixed; left: 32%;bottom: 1%; width: 35%; height: 7%; border: 2px solid; display:flex; z-index: 2;">
+        <div class="slots" id="slot1"></div>
+        <div class="slots" id="slot2"></div>
+        <div class="slots" id="slot3"></div>
+        <div class="slots" id="slot4"></div>
+        <div class="slots" id="slot5"></div>
+        <div class="slots" id="slot6"></div>
+        <div class="slots" id="slot7"></div>
+        <div class="slots" id="slot8"></div>
+        <div class="slots" id="slot9"></div>
+
+    </div>
+    <script type="module" src="src/main.js">
+    </script>
     <!-- <input type="file" id="loadFile" /> -->
 
 </body>

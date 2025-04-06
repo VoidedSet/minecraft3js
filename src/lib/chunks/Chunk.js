@@ -4,6 +4,7 @@ export class Chunk {
         this.cz = cz;
         this.size = size;
         this.maxHeight = 128;
+        this.meshes;
         this.blocks = this._generate(chunkNoise, biomeCorners);
     }
 

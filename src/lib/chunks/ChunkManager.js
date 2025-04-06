@@ -45,6 +45,23 @@ export default class ChunkManager {
             if (!world.world.has(key)) {
                 console.log("NEED A NEW CHUNK HERE");
                 world.genChunks(cx, cz);
+
+                const radius = 4;
+
+                for (const key of world.world.keys()) {
+                    const [x, z] = key.split(',').map(Number);
+                    const dx = Math.abs(cx - x);
+                    const dz = Math.abs(cz - z);
+
+                    if (Math.max(dx, dz) > radius) {
+                        const chunk = world.world.get(key);
+                        for (const { mesh } of Object.values(chunk.meshes)) {
+                            world.scene.remove(mesh);
+                        }
+                        world.world.delete(key);
+                        // console.log("unloaded a chunk: ", world.world)
+                    }
+                }
             }
 
             const wx = cx * chunkSize;
