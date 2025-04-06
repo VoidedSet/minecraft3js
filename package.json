@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "3js": "^1.0.0",
+    "noisejs": "^2.1.0",
+    "open-simplex-noise": "^2.5.0",
+    "three": "^0.175.0"
+  }
+}
