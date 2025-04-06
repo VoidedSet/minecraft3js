@@ -28,11 +28,11 @@ const factory = new BlockGeometryFactory(atlas);
 const material = new THREE.MeshBasicMaterial({ map: texture });
 
 const world = new WorldBiomes(scene, factory, material);
+const chunkManager = new ChunkManager(world.chunkSize, 4, world);
 
-const player = new Player(scene, camera);
+const player = new Player(scene, camera, chunkManager);
 const clock = new THREE.Clock();
 
-const chunkManager = new ChunkManager(world.chunkSize, 4, world);
 
 scene.fog = new THREE.FogExp2(0x87ceeb, 0.015); // sky blue, tweak density
 renderer.setClearColor(0x87ceeb);

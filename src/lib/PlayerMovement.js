@@ -3,7 +3,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { BlockDict } from './Blocks';
 
 export class Player {
-    constructor(scene, camera) {
+    constructor(scene, camera, chunkManager) {
 
 
         this.camera = camera;
@@ -45,12 +45,15 @@ export class Player {
         this.moveRight = false;
         this.canJump = false;
 
+        this.hotbar = [9, 2, 4, 1, 3, 1, 1, 5, 6];
         this.selectedSlot = 0; // default to first slot
         this.maxSlots = 9;
         this.updateHotbarUI();
         this.initHotbarScroll();
 
         this.initInput();
+
+        this.chunkManager = chunkManager;
     }
 
     initInput() {
@@ -74,15 +77,72 @@ export class Player {
                     break;
                 case 'Space':
                     if (this.canJump) {
-                        this.velocity.y += 350;
+                        this.velocity.y += 50;
                         this.canJump = false;
                         console.log(this.controls.object.position)
                     }
                     break;
                 case 'ShiftLeft':
-                    this.velocity.y -= 350;
+                    this.velocity.y -= 50;
                     break;
             }
+        });
+        document.addEventListener('mousedown', (event) => {
+            if (this.controls.isLocked && event.button === 0) {
+                const blockId = this.hotbar[this.selectedSlot];
+                console.log("Place block with ID:", blockId);
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera); // center of screen
+
+                const intersects = raycaster.intersectObjects(this.scene.children, true); // true = recursive
+
+                if (intersects.length > 0) {
+                    const hit = intersects[0];
+
+                    // Get the block position that was hit
+                    const point = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
+                    const targetPosition = new THREE.Vector3(
+                        Math.floor(point.x),
+                        Math.floor(point.y),
+                        Math.floor(point.z)
+                    );
+
+                    const blockId = this.hotbar[this.selectedSlot];
+
+                    // Call your custom block placing method
+                    // this.placeBlock(targetPosition, blockId);
+                    console.log(`Placing block ID ${blockId} at`, targetPosition);
+
+                    this.chunkManager.placeBlockAt(blockId, targetPosition)
+                }
+            }
+            if (this.controls.isLocked && event.button === 2) {
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera); // center of screen
+
+                const intersects = raycaster.intersectObjects(this.scene.children, true); // true = recursive
+
+                if (intersects.length > 0) {
+                    const hit = intersects[0];
+
+                    // Get the block position that was hit
+                    const point = hit.point.clone(); // ❌ don't add face.normal here
+                    const targetPosition = new THREE.Vector3(
+                        Math.floor(point.x),
+                        Math.floor(point.y),
+                        Math.floor(point.z));
+
+                    const blockId = 0;
+
+                    // Call your custom block placing method
+                    // this.placeBlock(targetPosition, blockId);
+                    console.log(`Placing block ID ${blockId} at`, targetPosition);
+
+                    this.chunkManager.placeBlockAt(blockId, targetPosition)
+                }
+            }
+
+
         });
 
         document.addEventListener('keyup', (event) => {
@@ -102,6 +162,9 @@ export class Player {
                 case 'ArrowRight':
                 case 'KeyD':
                     this.moveRight = false;
+                    break;
+                case 'ShiftLeft':
+                    this.velocity.y -= 50;
                     break;
             }
         });

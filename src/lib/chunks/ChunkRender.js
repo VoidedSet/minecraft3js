@@ -61,4 +61,16 @@ export class ChunkRenderer {
             entry.mesh.instanceMatrix.needsUpdate = true;
         }
     }
+
+    reRender(chunk, cx, cz) {
+        if (chunk.meshes) {
+            for (const { mesh } of Object.values(chunk.meshes)) {
+                this.scene.remove(mesh);
+                mesh.geometry.dispose();  // optional cleanup
+                mesh.material.dispose(); // optional cleanup
+            }
+        }
+
+        this.render(chunk, cx, cz);
+    }
 }

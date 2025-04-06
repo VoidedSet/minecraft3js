@@ -5,6 +5,7 @@ export class Chunk {
         this.size = size;
         this.maxHeight = 128;
         this.meshes;
+        this.needsUpdate = false;
         this.blocks = this._generate(chunkNoise, biomeCorners);
     }
 
@@ -92,4 +93,10 @@ export class Chunk {
 
         return this.blocks[px][py][pz];
     }
+
+    updateBlock(x, y, z, blockId) {
+        this.blocks[x][y][z] = blockId;
+        this.needsUpdate = true;
+    }
+
 }

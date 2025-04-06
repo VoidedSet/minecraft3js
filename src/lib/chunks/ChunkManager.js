@@ -1,3 +1,4 @@
+import { ChunkRenderer } from "./ChunkRender";
 
 export default class ChunkManager {
     constructor(chunkSize, loadRadius, world) {
@@ -9,26 +10,6 @@ export default class ChunkManager {
 
         this.lastDebugChunkX = null;
         this.lastDebugChunkZ = null;
-    }
-
-    update(pX, pZ, chunkNoise, biomeMap) {
-        const centerX = Math.floor(pX / this.chunkSize);
-        const centerZ = Math.floor(pZ / this.chunkSize);
-
-        const newLoaded = new Set();
-
-        for (let dx = -this.loadRadius; dx <= this.loadRadius; dx++) {
-            for (let dz = -this.loadRadius; dz <= this.loadRadius; dz++) {
-                const cx = centerX + dx;
-                const cz = centerZ + dz;
-                const key = `${cx},${cz}`;
-                newLoaded.key(key);
-
-                if (!this.loadedSet.has(key)) {
-                    const biomeCorners = get
-                }
-            }
-        }
     }
 
     chunkChangeCheck(player, world) {
@@ -70,8 +51,43 @@ export default class ChunkManager {
             console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
         }
     }
+    placeBlockAt(blockId, targetPos) {
+        const chunkSize = this.world.chunkSize;
 
+        // Get chunk coords
+        const cx = Math.floor(targetPos.x / chunkSize);
+        const cz = Math.floor(targetPos.z / chunkSize);
 
+        const key = `${cx},${cz}`; // no space
+        const chunk = this.world.world.get(key); // get the actual chunk object
+
+        console.log("Chunk key:", key);
+        console.log("Chunk object:", chunk);
+
+        if (!chunk) {
+            console.warn("No chunk found at this location.");
+            return;
+        }
+
+        // Get local block coords within chunk
+        let lx = Math.floor(targetPos.x % chunkSize);
+        let ly = Math.floor(targetPos.y);
+        let lz = Math.floor(targetPos.z % chunkSize);
+
+        // Fix for negative world positions
+        lx = (lx + chunkSize) % chunkSize;
+        lz = (lz + chunkSize) % chunkSize;
+
+        console.log(`Setting block ${blockId} at local coords [${lx}, ${ly}, ${lz}] in chunk ${key}`);
+        chunk.updateBlock(lx, ly, lz, blockId);
+        const renderer = new ChunkRenderer(
+            this.world.scene,
+            this.world.factory,
+            this.world.material,
+            this.world.chunkSize
+        );
+        renderer.reRender(chunk, cx, cz);
+    }
 
 
 }
