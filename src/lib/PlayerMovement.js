@@ -22,7 +22,7 @@ export class Player {
         this.moveRight = false;
         this.canJump = false;
 
-        this.hotbar = [1, 2, 3, 3, 6, 6, 7, 8, 9];
+        this.hotbar = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         this.selectedSlot = 0;
         this.maxSlots = 9;
 
@@ -171,7 +171,7 @@ export class Player {
             if (icon) {
                 if (blockData && blockData.uv && blockData.uv.top) {
                     const [u, v] = blockData.uv.top;
-                    const texSize = 16;
+                    const texSize = 32;
                     icon.style.backgroundImage = "url('blocks.png')";
                     icon.style.backgroundPosition = `-${u * texSize}px -${v * texSize}px`;
                 } else {

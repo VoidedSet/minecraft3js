@@ -6,10 +6,14 @@ It can generate chunks and unload chunks that are not needed!
 
 <h3>To Do</h3>
 Physics ;-; <br>
-Block place and destroy<br>
 Saving the world<br>
-Trees and structures<br>
+Structures<br>
 Mobs (and their ai)<br>
+Improve existing tree gen<br>
+Improve block placement accuracy<br>
+Animations(block breaking, water etc)<br>
+Block transparency and gravity<br>
+Improved Biomes and biome specific blocks and trees<br>
 
 <h1>Installation</h1><br>
 <code>npm install</code> to install packages<br>

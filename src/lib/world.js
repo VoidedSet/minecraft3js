@@ -9,7 +9,7 @@ export default class WorldBiomes {
         this.material = material;
 
         this.chunkSize = 16;
-        this.numChunks = 2;
+        this.numChunks = 3;
         this.waterLevel = 10;
         this.maxHeight = 128;
 
@@ -29,7 +29,7 @@ export default class WorldBiomes {
     }
 
     getBiome(wx, wz) {
-        const value = this.biomeNoise(wx * 0.01, wz * 0.01);
+        const value = this.biomeNoise(wx * 0.005, wz * 0.001);
         if (value < -0.3) return "ocean";
         if (value < 0.2) return "plains";
         return "mountains";
@@ -77,7 +77,7 @@ export default class WorldBiomes {
             }
         }
 
-        console.log(this.world)
+        // console.log(this.world)
     }
 
 
@@ -131,6 +131,17 @@ export default class WorldBiomes {
                 }
             }
         }
+    }
+
+    safeSpawn(player) {
+        const key = `1,1`;
+        const chunk = this.world.get(key);
+
+        player.controls.object.position.set(24, 8, 24);
+        while (chunk.blocks[8][player.controls.object.position.y][8] != 0)
+            player.controls.object.position.y++;
+
+        player.controls.object.position.y++;
     }
 
 

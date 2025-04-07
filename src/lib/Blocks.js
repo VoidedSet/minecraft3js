@@ -90,6 +90,32 @@ export const BlockDict = {
             side: [0, 1],
             bottom: [0, 1]
         }
+    },
+    oak_log: {
+        id: 4,
+        name: "Oak Log",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        uv: {
+            top: [3, 1],
+            side: [2, 1],
+            bottom: [3, 1]
+        }
+
+    },
+    oak_leaves: {
+        id: 5,
+        name: "Oak leaves",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: true,
+        uv: {
+            top: [4, 1],
+            side: [4, 1],
+            bottom: [4, 1]
+        }
+
     }
 };
 
@@ -101,13 +127,16 @@ export class BlockAtlas {
 
     getFaceUV([x, y]) {
         const s = this.UV_SCALE;
-        return [
-            x * s, y * s,
-            (x + 1) * s, y * s,
-            (x + 1) * s, (y + 1) * s,
-            x * s, (y + 1) * s
+        const eps = 0.001; // try values between 0.001 - 0.01
+
+        return [  // top-right
+            x * s + eps, y * s + eps,       // bottom-left
+            (x + 1) * s - eps, y * s + eps,
+            x * s + eps, (y + 1) * s - eps,  // top-left
+            (x + 1) * s - eps, (y + 1) * s - eps  // bottom-right
         ];
     }
+
 
     getUVs(type) {
         const block = Object.values(BlockDict).find(b => b.name.toLowerCase() === type.toLowerCase());

@@ -51,7 +51,9 @@ export class Chunk {
 
                 for (let y = 0; y <= height; y++) {
                     let block = 0;
-                    if (y === height) block = 1;
+                    if (y === height) {
+                        block = 1;
+                    }
                     else if (y >= height - stoneDepth) block = 2;
                     else {
                         block = 7;
@@ -60,12 +62,19 @@ export class Chunk {
                         if (y > 5 && y < 30 && r < 0.02) block = 9;
                     }
                     CHUNK[x][y][z] = block;
+
+                    if (CHUNK[x][y][z] === 1 && CHUNK[x][y + 1][z] === 0 && y > 10) {
+                        if (Math.random() < 0.01 && !this.hasNearbyTree(CHUNK, x, y + 1, z, 2)) {
+                            this.placeTree(CHUNK, x, y, z);
+                        }
+                    }
                 }
 
                 for (let y = 0; y <= 10; y++) {
                     if (CHUNK[x][y][z] === 0) CHUNK[x][y][z] = 3;
                     else if (CHUNK[x][y][z] === 1) CHUNK[x][y][z] = 6;
                 }
+
             }
         }
 
@@ -97,6 +106,59 @@ export class Chunk {
     updateBlock(x, y, z, blockId) {
         this.blocks[x][y][z] = blockId;
         this.needsUpdate = true;
+    }
+
+    placeTree(chunk, x, y, z) {
+        const height = 2 + Math.floor(Math.random() * 4);
+
+        for (let i = 0; i < height; i++) {
+            const yy = y + i + 1;
+            if (yy < this.maxHeight) {
+                chunk[x][yy][z] = 4; // log
+            }
+        }
+
+        const leafStart = y + height;
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = 0; dy <= 2; dy++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    const lx = x + dx;
+                    const ly = leafStart + dy;
+                    const lz = z + dz;
+                    if (
+                        lx >= 0 && lx < this.size &&
+                        ly >= 0 && ly < this.maxHeight &&
+                        lz >= 0 && lz < this.size &&
+                        chunk[lx][ly][lz] === 0 &&
+                        Math.random() > 0.2
+                    ) {
+                        chunk[lx][ly][lz] = 5; // leaves
+                    }
+                }
+            }
+        }
+    }
+
+    hasNearbyTree(chunk, x, y, z, radius) {
+        for (let dx = -radius; dx <= radius; dx++) {
+            for (let dy = -1; dy <= 5; dy++) { // log/leaf height
+                for (let dz = -radius; dz <= radius; dz++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    const nz = z + dz;
+
+                    if (
+                        nx >= 0 && nx < this.size &&
+                        ny >= 0 && ny < this.maxHeight &&
+                        nz >= 0 && nz < this.size
+                    ) {
+                        const b = chunk[nx][ny][nz];
+                        if (b === 10 || b === 11) return true; // tree log or leaves
+                    }
+                }
+            }
+        }
+        return false;
     }
 
 }
