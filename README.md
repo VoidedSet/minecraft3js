@@ -6,7 +6,6 @@ It can generate chunks and unload chunks that are not needed!
 
 <h3>To Do</h3>
 Physics ;-; <br>
-Block place and destroy<br>
 Saving the world<br>
 Trees and structures<br>
 Mobs (and their ai)<br>
