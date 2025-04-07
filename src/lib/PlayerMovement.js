@@ -4,23 +4,41 @@ import { BlockDict } from './Blocks';
 
 export class Player {
     constructor(scene, camera, chunkManager) {
-
-
-        this.camera = camera;
         this.scene = scene;
-        this.controls = new PointerLockControls(camera, document.body);
-        this.controls.object.position.set(0, 20, 0); // Start 20 units high
+        this.camera = camera;
+        this.chunkManager = chunkManager;
+        this.debugRay = false;
 
+        this.controls = new PointerLockControls(camera, document.body);
+        this.controls.object.position.set(0, 0, 0);
+        scene.add(this.controls.object);
         this.position = this.controls.object.position;
 
-        // UI elements
+        this.velocity = new THREE.Vector3();
+        this.direction = new THREE.Vector3();
+        this.moveForward = false;
+        this.moveBackward = false;
+        this.moveLeft = false;
+        this.moveRight = false;
+        this.canJump = false;
+
+        this.hotbar = [1, 2, 3, 3, 6, 6, 7, 8, 9];
+        this.selectedSlot = 0;
+        this.maxSlots = 9;
+
+
+        this.initUI();
+        this.initInput();
+        this.initHotbarScroll();
+        this.updateHotbarUI();
+    }
+
+    initUI() {
         const blocker = document.getElementById('blocker');
         const instructions = document.getElementById('instructions');
-        const crosshair = document.getElementById('crosshair')
+        const crosshair = document.getElementById('crosshair');
 
-        instructions.addEventListener('click', () => {
-            this.controls.lock();
-        });
+        instructions.addEventListener('click', () => this.controls.lock());
 
         this.controls.addEventListener('lock', () => {
             instructions.style.display = 'none';
@@ -33,53 +51,19 @@ export class Player {
             instructions.style.display = '';
             crosshair.style.display = 'none';
         });
-
-        scene.add(this.controls.object);
-
-        // Movement variables
-        this.velocity = new THREE.Vector3();
-        this.direction = new THREE.Vector3();
-        this.moveForward = false;
-        this.moveBackward = false;
-        this.moveLeft = false;
-        this.moveRight = false;
-        this.canJump = false;
-
-        this.hotbar = [9, 2, 4, 1, 3, 1, 1, 5, 6];
-        this.selectedSlot = 0; // default to first slot
-        this.maxSlots = 9;
-        this.updateHotbarUI();
-        this.initHotbarScroll();
-
-        this.initInput();
-
-        this.chunkManager = chunkManager;
     }
 
     initInput() {
         document.addEventListener('keydown', (event) => {
             switch (event.code) {
-                case 'ArrowUp':
-                case 'KeyW':
-                    this.moveForward = true;
-                    break;
-                case 'ArrowLeft':
-                case 'KeyA':
-                    this.moveLeft = true;
-                    break;
-                case 'ArrowDown':
-                case 'KeyS':
-                    this.moveBackward = true;
-                    break;
-                case 'ArrowRight':
-                case 'KeyD':
-                    this.moveRight = true;
-                    break;
+                case 'KeyW': this.moveForward = true; break;
+                case 'KeyA': this.moveLeft = true; break;
+                case 'KeyS': this.moveBackward = true; break;
+                case 'KeyD': this.moveRight = true; break;
                 case 'Space':
                     if (this.canJump) {
                         this.velocity.y += 50;
                         this.canJump = false;
-                        console.log(this.controls.object.position)
                     }
                     break;
                 case 'ShiftLeft':
@@ -87,120 +71,127 @@ export class Player {
                     break;
             }
         });
-        document.addEventListener('mousedown', (event) => {
-            if (this.controls.isLocked && event.button === 0) {
-                const blockId = this.hotbar[this.selectedSlot];
-                console.log("Place block with ID:", blockId);
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera); // center of screen
-
-                const intersects = raycaster.intersectObjects(this.scene.children, true); // true = recursive
-
-                if (intersects.length > 0) {
-                    const hit = intersects[0];
-
-                    // Get the block position that was hit
-                    const point = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
-                    const targetPosition = new THREE.Vector3(
-                        Math.floor(point.x),
-                        Math.floor(point.y),
-                        Math.floor(point.z)
-                    );
-
-                    const blockId = this.hotbar[this.selectedSlot];
-
-                    // Call your custom block placing method
-                    // this.placeBlock(targetPosition, blockId);
-                    console.log(`Placing block ID ${blockId} at`, targetPosition);
-
-                    this.chunkManager.placeBlockAt(blockId, targetPosition)
-                }
-            }
-            if (this.controls.isLocked && event.button === 2) {
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera); // center of screen
-
-                const intersects = raycaster.intersectObjects(this.scene.children, true); // true = recursive
-
-                if (intersects.length > 0) {
-                    const hit = intersects[0];
-
-                    // Get the block position that was hit
-                    const point = hit.point.clone(); // ❌ don't add face.normal here
-                    const targetPosition = new THREE.Vector3(
-                        Math.floor(point.x),
-                        Math.floor(point.y),
-                        Math.floor(point.z));
-
-                    const blockId = 0;
-
-                    // Call your custom block placing method
-                    // this.placeBlock(targetPosition, blockId);
-                    console.log(`Placing block ID ${blockId} at`, targetPosition);
-
-                    this.chunkManager.placeBlockAt(blockId, targetPosition)
-                }
-            }
-
-
-        });
 
         document.addEventListener('keyup', (event) => {
             switch (event.code) {
-                case 'ArrowUp':
-                case 'KeyW':
-                    this.moveForward = false;
-                    break;
-                case 'ArrowLeft':
-                case 'KeyA':
-                    this.moveLeft = false;
-                    break;
-                case 'ArrowDown':
-                case 'KeyS':
-                    this.moveBackward = false;
-                    break;
-                case 'ArrowRight':
-                case 'KeyD':
-                    this.moveRight = false;
-                    break;
-                case 'ShiftLeft':
-                    this.velocity.y -= 50;
-                    break;
+                case 'KeyW': this.moveForward = false; break;
+                case 'KeyA': this.moveLeft = false; break;
+                case 'KeyS': this.moveBackward = false; break;
+                case 'KeyD': this.moveRight = false; break;
+                case 'ShiftLeft': this.velocity.y -= 50; break;
+            }
+        });
+
+        document.addEventListener('mousedown', (event) => {
+            if (!this.controls.isLocked) return;
+
+            const maxDistance = 8;
+            const stepSize = 0.1;
+
+            const direction = new THREE.Vector3();
+            this.camera.getWorldDirection(direction);
+            const origin = this.camera.position.clone();
+
+            let lastBlockPos = null;
+
+            for (let d = 0; d < maxDistance; d += stepSize) {
+                const pos = origin.clone().addScaledVector(direction, d);
+                const blockPos = this.smartFloor(pos, direction);
+
+                if (!blockPos || !lastBlockPos || !blockPos.equals(lastBlockPos)) {
+                    lastBlockPos = blockPos.clone();
+
+                    const blockId = this.chunkManager.returnBlockId(blockPos);
+                    if (blockId !== 0) {
+                        const placePos = blockPos.clone().add(direction.clone().negate().normalize()).floor();
+
+                        if (!placePos || isNaN(placePos.x)) {
+                            console.warn("Invalid placePos:", placePos);
+                            return;
+                        }
+
+                        switch (event.button) {
+                            case 0: // Left-click: place
+                                this.chunkManager.placeBlockAt(this.hotbar[this.selectedSlot], placePos);
+                                break;
+
+                            case 1: // Middle-click: pick
+                                this.hotbar[this.selectedSlot] = blockId;
+                                this.updateHotbarUI?.();
+                                break;
+
+                            case 2: // Right-click: break
+                                this.chunkManager.placeBlockAt(0, blockPos);
+                                break;
+                        }
+                        break;
+                    }
+                }
             }
         });
     }
+
+    smartFloor(pos, dir) {
+        return new THREE.Vector3(
+            dir.x < 0 ? Math.ceil(pos.x) - 1 : Math.floor(pos.x),
+            dir.y < 0 ? Math.ceil(pos.y) - 1 : Math.floor(pos.y),
+            dir.z < 0 ? Math.ceil(pos.z) - 1 : Math.floor(pos.z)
+        );
+    }
+
     initHotbarScroll() {
         window.addEventListener('wheel', (event) => {
-            if (event.deltaY > 0) {
-                this.selectedSlot = (this.selectedSlot + 1) % this.maxSlots;
-            } else {
-                this.selectedSlot = (this.selectedSlot - 1 + this.maxSlots) % this.maxSlots;
-            }
+            this.selectedSlot = (this.selectedSlot + (event.deltaY > 0 ? 1 : -1) + this.maxSlots) % this.maxSlots;
             this.updateHotbarUI();
         });
     }
+    fillHotbar() {
+        const blockValues = Object.values(BlockDict);
+        for (let i = 0; i < this.maxSlots; i++) {
+            this.hotbar[i] = blockValues[i % blockValues.length].id;
+        }
+        this.updateHotbarUI();
+    }
+
     updateHotbarUI() {
         for (let i = 0; i < this.maxSlots; i++) {
             const slot = document.getElementById(`slot${i + 1}`);
+            const icon = document.getElementById(`icon${i + 1}`);
+
+            const blockId = this.hotbar[i];
+            const blockData = blockId != null
+                ? Object.values(BlockDict).find(b => b.id === blockId)
+                : null;
+
             if (slot) {
                 slot.style.borderWidth = i === this.selectedSlot ? "3px" : "2px";
                 slot.style.borderColor = i === this.selectedSlot ? "black" : "white";
             }
+
+            if (icon) {
+                if (blockData && blockData.uv && blockData.uv.top) {
+                    const [u, v] = blockData.uv.top;
+                    const texSize = 16;
+                    icon.style.backgroundImage = "url('blocks.png')";
+                    icon.style.backgroundPosition = `-${u * texSize}px -${v * texSize}px`;
+                } else {
+                    icon.style.backgroundImage = '';
+                    icon.style.backgroundPosition = '';
+                }
+            }
         }
     }
+
+
+
 
     update(delta, blockId) {
         const velocity = this.velocity;
         const direction = this.direction;
 
-        // Apply friction
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
 
-        // Apply gravity
-        // velocity.y -= 9.8 * 1 * delta;
-
-        // Input direction
         direction.z = Number(this.moveForward) - Number(this.moveBackward);
         direction.x = Number(this.moveRight) - Number(this.moveLeft);
         direction.normalize();
@@ -210,17 +201,12 @@ export class Player {
 
         this.controls.moveRight(-velocity.x * delta);
         this.controls.moveForward(-velocity.z * delta);
-
-        this.position = this.controls.object.position;
         this.position.y += velocity.y * delta;
 
-        // Get the block object from BlockDict using blockId
         const blockEntry = Object.values(BlockDict).find(b => b.id === blockId);
-
-        // Simple ground collision if block is solid
-        if ((blockEntry && blockEntry.isSolid) || this.position.y < 10) {
+        if ((blockEntry?.isSolid) || this.position.y < 10) {
             velocity.y = 0;
-            this.position.y = Math.max(this.position.y, 10); // don't let player fall below Y=10
+            this.position.y = Math.max(this.position.y, 10);
             this.canJump = true;
         }
     }

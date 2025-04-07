@@ -1,3 +1,4 @@
+import { traaPass } from "three/examples/jsm/tsl/display/TRAAPassNode.js";
 import { ChunkRenderer } from "./ChunkRender";
 
 export default class ChunkManager {
@@ -5,8 +6,6 @@ export default class ChunkManager {
         this.chunkSize = chunkSize;
         this.loadRadius = loadRadius;
         this.world = world;
-        this.chunks = new Map();
-        this.loadedSet = new Set();
 
         this.lastDebugChunkX = null;
         this.lastDebugChunkZ = null;
@@ -51,42 +50,60 @@ export default class ChunkManager {
             console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
         }
     }
-    placeBlockAt(blockId, targetPos) {
-        const chunkSize = this.world.chunkSize;
 
-        // Get chunk coords
+    placeBlockAt(blockId, targetPos) {
+        const { chunkSize, world, scene, factory, material } = this.world;
+
         const cx = Math.floor(targetPos.x / chunkSize);
         const cz = Math.floor(targetPos.z / chunkSize);
-
-        const key = `${cx},${cz}`; // no space
-        const chunk = this.world.world.get(key); // get the actual chunk object
-
-        console.log("Chunk key:", key);
-        console.log("Chunk object:", chunk);
+        const key = `${cx},${cz}`;
+        const chunk = world.get(key);
 
         if (!chunk) {
-            console.warn("No chunk found at this location.");
+            console.warn("No chunk found at", key);
             return;
         }
 
-        // Get local block coords within chunk
+        // Local chunk coords
         let lx = Math.floor(targetPos.x % chunkSize);
         let ly = Math.floor(targetPos.y);
         let lz = Math.floor(targetPos.z % chunkSize);
 
-        // Fix for negative world positions
         lx = (lx + chunkSize) % chunkSize;
         lz = (lz + chunkSize) % chunkSize;
 
-        console.log(`Setting block ${blockId} at local coords [${lx}, ${ly}, ${lz}] in chunk ${key}`);
         chunk.updateBlock(lx, ly, lz, blockId);
-        const renderer = new ChunkRenderer(
-            this.world.scene,
-            this.world.factory,
-            this.world.material,
-            this.world.chunkSize
-        );
+
+        const renderer = new ChunkRenderer(scene, factory, material, chunkSize);
         renderer.reRender(chunk, cx, cz);
+    }
+
+    returnBlockId(targetPos) {
+        const chunkSize = this.world.chunkSize;
+
+        const cx = Math.floor(targetPos.x / chunkSize);
+        const cz = Math.floor(targetPos.z / chunkSize);
+        const key = `${cx},${cz}`;
+        const chunk = this.world.world.get(key);
+
+        if (!chunk) {
+            console.warn(`Chunk ${key} not found`);
+            return 0;
+        }
+
+        let lx = Math.floor(targetPos.x) % chunkSize;
+        let ly = Math.floor(targetPos.y);
+        let lz = Math.floor(targetPos.z) % chunkSize;
+
+        lx = (lx + chunkSize) % chunkSize;
+        lz = (lz + chunkSize) % chunkSize;
+
+        if (ly < 0 || ly >= chunk.blocks[0].length) {
+            console.warn(`Y index ${ly} out of bounds`);
+            return 0;
+        }
+
+        return chunk.blocks[lx][ly][lz] || 0;
     }
 
 
