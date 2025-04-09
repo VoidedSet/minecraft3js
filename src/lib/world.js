@@ -18,6 +18,8 @@ export default class WorldBiomes {
 
         this.biomeMap = [];
         this.world = new Map();
+        this.modifiedMap = new Map();
+
 
         this.biomeSettings = {
             ocean: { heightScale: 10, waterLevel: 12 },
@@ -76,8 +78,6 @@ export default class WorldBiomes {
                 this.world.set(key, chunk);
             }
         }
-
-        // console.log(this.world)
     }
 
 
@@ -106,19 +106,23 @@ export default class WorldBiomes {
         return { topLeft, topRight, bottomLeft, bottomRight };
     }
 
-    genChunks(cx, cz) {
+    genChunks(cx, cz, modifiedMap) {
+        if (modifiedMap)
+            console.log("This chunk is modified")
         for (let dx = -1; dx <= 2; dx++) {
             for (let dz = -2; dz <= 1; dz++) {
                 const nx = cx + dx;
                 const nz = cz + dz;
                 const key = `${nx},${nz}`;
+
                 if (!this.world.has(key)) {
                     const chunk = new Chunk(
                         nx,
                         nz,
                         this.chunkSize,
                         this.chunkHeightNoise,
-                        this.getBiomeCorners(nx, nz)
+                        this.getBiomeCorners(nx, nz),
+                        modifiedMap
                     );
                     this.world.set(key, chunk);
                     const renderer = new ChunkRenderer(
@@ -127,6 +131,7 @@ export default class WorldBiomes {
                         this.material,
                         this.chunkSize
                     );
+
                     renderer.render(chunk, nx, nz);
                 }
             }
@@ -143,6 +148,4 @@ export default class WorldBiomes {
 
         player.controls.object.position.y++;
     }
-
-
 }

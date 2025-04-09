@@ -1,11 +1,11 @@
-import { traaPass } from "three/examples/jsm/tsl/display/TRAAPassNode.js";
 import { ChunkRenderer } from "./ChunkRender";
 
 export default class ChunkManager {
-    constructor(chunkSize, loadRadius, world) {
+    constructor(chunkSize, loadRadius, world, modifiedMap) {
         this.chunkSize = chunkSize;
         this.loadRadius = loadRadius;
         this.world = world;
+        this.modifiedMap = modifiedMap;
 
         this.lastDebugChunkX = null;
         this.lastDebugChunkZ = null;
@@ -22,27 +22,32 @@ export default class ChunkManager {
             this.lastDebugChunkZ = cz;
 
             const key = `${cx},${cz}`;
-            if (!world.world.has(key)) {
-                console.log("NEED A NEW CHUNK HERE");
-                world.genChunks(cx, cz);
 
+            // console.log("Looking for key:", key);
+            // console.log("All keys in modifiedMap:", [...this.modifiedMap.keys()]);
+            let modifiedBlocks = null;
+            if (this.modifiedMap.has(key)) {
+                modifiedBlocks = this.modifiedMap.get(key);
+            } else {
+                modifiedBlocks = null; // or use a default empty map if needed
+            }
+            if (!world.world.has(key)) {
+                console.log(modifiedBlocks)
+                world.genChunks(cx, cz, modifiedBlocks);
                 const radius = 4;
 
-                for (const key of world.world.keys()) {
-                    const [x, z] = key.split(',').map(Number);
-                    const dx = Math.abs(cx - x);
-                    const dz = Math.abs(cz - z);
-
-                    if (Math.max(dx, dz) > radius) {
-                        const chunk = world.world.get(key);
+                // unload distant chunks
+                for (const [k, chunk] of world.world.entries()) {
+                    const [x, z] = k.split(',').map(Number);
+                    if (Math.max(Math.abs(cx - x), Math.abs(cz - z)) > radius) {
                         for (const { mesh } of Object.values(chunk.meshes)) {
                             world.scene.remove(mesh);
                         }
-                        world.world.delete(key);
-                        // console.log("unloaded a chunk: ", world.world)
+                        world.world.delete(k);
                     }
                 }
             }
+
 
             const wx = cx * chunkSize;
             const wz = cz * chunkSize;
@@ -52,12 +57,12 @@ export default class ChunkManager {
     }
 
     placeBlockAt(blockId, targetPos) {
-        const { chunkSize, world, scene, factory, material } = this.world;
+        const { chunkSize, scene, factory, material } = this.world;
 
         const cx = Math.floor(targetPos.x / chunkSize);
         const cz = Math.floor(targetPos.z / chunkSize);
         const key = `${cx},${cz}`;
-        const chunk = world.get(key);
+        const chunk = this.world.world.get(key);
 
         if (!chunk) {
             console.warn("No chunk found at", key);
@@ -71,11 +76,18 @@ export default class ChunkManager {
 
         lx = (lx + chunkSize) % chunkSize;
         lz = (lz + chunkSize) % chunkSize;
-
+        let blockPos = {
+            x: lx,
+            y: ly,
+            z: lz
+        };
         chunk.updateBlock(lx, ly, lz, blockId);
-
         const renderer = new ChunkRenderer(scene, factory, material, chunkSize);
         renderer.reRender(chunk, cx, cz);
+
+        console.log(this.modifiedMap)
+
+        this.setModifiedBlock(key, blockPos, blockId)
     }
 
     returnBlockId(targetPos) {
@@ -106,5 +118,20 @@ export default class ChunkManager {
         return chunk.blocks[lx][ly][lz] || 0;
     }
 
+    setModifiedBlock(chunkKey, blockPos, blockId) {
+        const blockKey = `${blockPos.x},${blockPos.y},${blockPos.z}`;
 
+
+        if (!this.world.modifiedMap.has(chunkKey)) {
+            this.world.modifiedMap.set(chunkKey, new Map());
+        }
+
+        if (blockId == 0) {
+            blockId = -1;
+        }
+
+        this.world.modifiedMap.get(chunkKey).set(blockKey, blockId);
+
+        console.log(this.world.modifiedMap)
+    }
 }

@@ -1,15 +1,16 @@
 export class Chunk {
-    constructor(cx, cz, size, chunkNoise, biomeCorners) {
+    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap) {
         this.cx = cx;
         this.cz = cz;
         this.size = size;
         this.maxHeight = 128;
         this.meshes;
         this.needsUpdate = false;
-        this.blocks = this._generate(chunkNoise, biomeCorners);
+        this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap);
     }
 
-    _generate(chunkNoise, biomeCorners) {
+    _generate(chunkNoise, biomeCorners, modifiedMap) {
+
         const CHUNK = Array(this.size).fill().map(() =>
             Array(this.maxHeight).fill().map(() =>
                 Array(this.size).fill(0)
@@ -75,9 +76,22 @@ export class Chunk {
                     else if (CHUNK[x][y][z] === 1) CHUNK[x][y][z] = 6;
                 }
 
+                if (modifiedMap) {
+                    console.log("Modifying the chunk");
+                    for (const [key, blockId] of modifiedMap.entries()) {
+                        const [x, y, z] = key.split(',').map(Number);
+                        if (
+                            x >= 0 && x < this.size &&
+                            y >= 0 && y < this.maxHeight &&
+                            z >= 0 && z < this.size
+                        ) {
+                            CHUNK[x][y][z] = blockId === -1 ? 0 : blockId;
+                        }
+                    }
+                }
+
             }
         }
-
         return CHUNK;
     }
 

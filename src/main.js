@@ -4,7 +4,7 @@ import { BlockAtlas } from './lib/Blocks.js';
 import { BlockGeometryFactory } from './lib/BlockGeometryFactory.js';
 import { Player } from './lib/PlayerMovement.js';
 import ChunkManager from './lib/chunks/ChunkManager.js';
-import WorldBiomes from './lib/world.js';
+import WorldBiomes from './lib/World.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -32,7 +32,7 @@ const factory = new BlockGeometryFactory(atlas);
 const material = new THREE.MeshBasicMaterial({ map: texture });
 
 const world = new WorldBiomes(scene, factory, material);
-const chunkManager = new ChunkManager(world.chunkSize, 16, world);
+const chunkManager = new ChunkManager(world.chunkSize, 16, world, world.modifiedMap);
 
 const player = new Player(scene, camera, chunkManager);
 const clock = new THREE.Clock();
