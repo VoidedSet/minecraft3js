@@ -10,10 +10,10 @@ Saving the world<br>
 Structures<br>
 Mobs (and their ai)<br>
 Improve existing tree gen<br>
-Improve block placement accuracy<br>
 Animations(block breaking, water etc)<br>
-Block transparency and gravity<br>
 Improved Biomes and biome specific blocks and trees<br>
+add boss fights<br>
+game mechanics <br>
 
 <h1>Installation</h1><br>
 <code>npm install</code> to install packages<br>
