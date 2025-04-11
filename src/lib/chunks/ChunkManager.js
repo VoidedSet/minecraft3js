@@ -16,38 +16,35 @@ export default class ChunkManager {
         const chunkSize = world.chunkSize;
         const cx = Math.floor(pos.x / chunkSize);
         const cz = Math.floor(pos.z / chunkSize);
+        const radius = 2;
 
         if (cx !== this.lastDebugChunkX || cz !== this.lastDebugChunkZ) {
             this.lastDebugChunkX = cx;
             this.lastDebugChunkZ = cz;
 
-            const key = `${cx},${cz}`;
+            const toKeep = new Set();
 
-            // console.log("Looking for key:", key);
-            // console.log("All keys in modifiedMap:", [...this.modifiedMap.keys()]);
-            let modifiedBlocks = null;
-            if (this.modifiedMap.has(key)) {
-                modifiedBlocks = this.modifiedMap.get(key);
-            } else {
-                modifiedBlocks = null; // or use a default empty map if needed
-            }
-            if (!world.world.has(key)) {
-                console.log(modifiedBlocks)
-                world.genChunks(cx, cz, modifiedBlocks);
-                const radius = 4;
+            for (let dx = -radius; dx <= radius; dx++) {
+                for (let dz = -radius; dz <= radius; dz++) {
+                    const nx = cx + dx;
+                    const nz = cz + dz;
+                    const key = `${nx},${nz}`;
+                    toKeep.add(key);
 
-                // unload distant chunks
-                for (const [k, chunk] of world.world.entries()) {
-                    const [x, z] = k.split(',').map(Number);
-                    if (Math.max(Math.abs(cx - x), Math.abs(cz - z)) > radius) {
-                        for (const { mesh } of Object.values(chunk.meshes)) {
-                            world.scene.remove(mesh);
-                        }
-                        world.world.delete(k);
+                    if (!world.world.has(key)) {
+                        world.genChunks(nx, nz);
                     }
                 }
             }
 
+            for (const [k, chunk] of world.world.entries()) {
+                if (!toKeep.has(k)) {
+                    for (const { mesh } of Object.values(chunk.meshes)) {
+                        world.scene.remove(mesh);
+                    }
+                    world.world.delete(k);
+                }
+            }
 
             const wx = cx * chunkSize;
             const wz = cz * chunkSize;
@@ -115,7 +112,30 @@ export default class ChunkManager {
             return 0;
         }
 
+        // console.log(chunk.blocks[lx][ly][lz])
+
         return chunk.blocks[lx][ly][lz] || 0;
+    }
+
+    addRandomBlocksToChunk(modifiedMap, chunkKey, chunkSize = 16, maxHeight = 128, count = 32 * 32) {
+        const key = chunkKey;
+        let blockMap = modifiedMap.get(key);
+
+        if (!blockMap) {
+            blockMap = new Map();
+            modifiedMap.set(key, blockMap);
+        }
+
+        for (let i = 0; i < count; i++) {
+            const x = Math.floor(Math.random() * chunkSize);
+            const y = Math.floor(Math.random() * maxHeight);
+            const z = Math.floor(Math.random() * chunkSize);
+            const blockId = Math.floor(Math.random() * 10) + 1; // Random blockId from 1 to 10
+
+            blockMap.set(`${x},${y},${z}`, blockId);
+        }
+
+        console.log(`Injected ${count} random blocks into chunk (${chunkKey})`);
     }
 
     setModifiedBlock(chunkKey, blockPos, blockId) {
@@ -133,5 +153,7 @@ export default class ChunkManager {
         this.world.modifiedMap.get(chunkKey).set(blockKey, blockId);
 
         console.log(this.world.modifiedMap)
+
+        // this.addRandomBlocksToChunk(this.world.modifiedMap, chunkKey)    
     }
 }

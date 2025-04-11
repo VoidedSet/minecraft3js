@@ -62,7 +62,8 @@ export default class WorldBiomes {
                     cz,
                     this.chunkSize,
                     this.chunkHeightNoise,
-                    { topLeft, topRight, bottomLeft, bottomRight } // 4-corner biome data
+                    { topLeft, topRight, bottomLeft, bottomRight }, // 4-corner biome data
+                    this.modifiedMap
                 );
 
                 const renderer = new ChunkRenderer(
@@ -106,35 +107,30 @@ export default class WorldBiomes {
         return { topLeft, topRight, bottomLeft, bottomRight };
     }
 
-    genChunks(cx, cz, modifiedMap) {
-        if (modifiedMap)
-            console.log("This chunk is modified")
-        for (let dx = -1; dx <= 2; dx++) {
-            for (let dz = -2; dz <= 1; dz++) {
-                const nx = cx + dx;
-                const nz = cz + dz;
-                const key = `${nx},${nz}`;
+    genChunks(cx, cz) {
+        const key = `${cx},${cz}`;
+        if (!this.world.has(key)) {
+            if (this.modifiedMap.has(key))
+                console.log("This chunk is modified");
 
-                if (!this.world.has(key)) {
-                    const chunk = new Chunk(
-                        nx,
-                        nz,
-                        this.chunkSize,
-                        this.chunkHeightNoise,
-                        this.getBiomeCorners(nx, nz),
-                        modifiedMap
-                    );
-                    this.world.set(key, chunk);
-                    const renderer = new ChunkRenderer(
-                        this.scene,
-                        this.factory,
-                        this.material,
-                        this.chunkSize
-                    );
+            const chunk = new Chunk(
+                cx,
+                cz,
+                this.chunkSize,
+                this.chunkHeightNoise,
+                this.getBiomeCorners(cx, cz),
+                this.modifiedMap
+            );
+            this.world.set(key, chunk);
 
-                    renderer.render(chunk, nx, nz);
-                }
-            }
+            const renderer = new ChunkRenderer(
+                this.scene,
+                this.factory,
+                this.material,
+                this.chunkSize
+            );
+
+            renderer.render(chunk, cx, cz);
         }
     }
 

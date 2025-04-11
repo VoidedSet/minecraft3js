@@ -9,7 +9,24 @@ export class Chunk {
         this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap);
     }
 
+
     _generate(chunkNoise, biomeCorners, modifiedMap) {
+        // Generate chunk from noise normally
+        const CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners);
+
+        const key = `${this.cx},${this.cz}`;
+
+        if (modifiedMap.has(key)) {
+            const modifiedBlocks = modifiedMap.get(key);
+            console.log(modifiedBlocks)
+            this._applyModifications(CHUNK, modifiedBlocks);
+        }
+
+        return CHUNK;
+    }
+
+
+    _generateBaseChunk(chunkNoise, biomeCorners, modifiedMap) {
 
         const CHUNK = Array(this.size).fill().map(() =>
             Array(this.maxHeight).fill().map(() =>
@@ -94,6 +111,22 @@ export class Chunk {
         }
         return CHUNK;
     }
+
+    _applyModifications(CHUNK, modifiedBlocks) {
+        if (!modifiedBlocks) return;
+
+        for (const [key, blockId] of modifiedBlocks.entries()) {
+            const [x, y, z] = key.split(',').map(Number);
+            if (
+                x >= 0 && x < this.size &&
+                y >= 0 && y < this.maxHeight &&
+                z >= 0 && z < this.size
+            ) {
+                CHUNK[x][y][z] = blockId === -1 ? 0 : blockId;
+            }
+        }
+    }
+
 
     bilerp(tl, tr, bl, br, tx, tz) {
         const top = this.lerp(tl, tr, tx);

@@ -7,7 +7,7 @@ export class Player {
         this.scene = scene;
         this.camera = camera;
         this.chunkManager = chunkManager;
-        this.debugRay = false;
+        this.debugRay = true;
 
         this.controls = new PointerLockControls(camera, document.body);
         this.controls.object.position.set(0, 0, 0);
@@ -26,6 +26,12 @@ export class Player {
         this.selectedSlot = 0;
         this.maxSlots = 9;
 
+        this.marker = new THREE.Mesh(
+            new THREE.BoxGeometry(1.01, 1.01, 1.01),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 })
+        );
+        this.marker.visible = false;
+        this.scene.add(this.marker);
 
         this.initUI();
         this.initInput();
@@ -53,6 +59,81 @@ export class Player {
         });
     }
 
+    raycastVoxel(origin, direction, maxDistance, getBlockAt) {
+        const pos = origin.clone();
+
+        const step = new THREE.Vector3(
+            Math.sign(direction.x),
+            Math.sign(direction.y),
+            Math.sign(direction.z)
+        );
+
+        const tDelta = new THREE.Vector3(
+            Math.abs(1 / direction.x),
+            Math.abs(1 / direction.y),
+            Math.abs(1 / direction.z)
+        );
+
+        // Floor current position to get voxel we're in
+        const voxel = new THREE.Vector3(
+            Math.floor(pos.x),
+            Math.floor(pos.y),
+            Math.floor(pos.z)
+        );
+
+        // Add +1 when stepping forward so we don't miss the boundary on positive rays
+        const nextVoxelBoundary = new THREE.Vector3(
+            voxel.x + (step.x > 0 ? 1 : 0),
+            voxel.y + (step.y > 0 ? 1 : 0),
+            voxel.z + (step.z > 0 ? 1 : 0)
+        );
+
+        const tMax = new THREE.Vector3(
+            (nextVoxelBoundary.x - pos.x) / direction.x,
+            (nextVoxelBoundary.y - pos.y) / direction.y,
+            (nextVoxelBoundary.z - pos.z) / direction.z
+        );
+
+        tMax.x = isFinite(tMax.x) ? Math.abs(tMax.x) : Infinity;
+        tMax.y = isFinite(tMax.y) ? Math.abs(tMax.y) : Infinity;
+        tMax.z = isFinite(tMax.z) ? Math.abs(tMax.z) : Infinity;
+
+        let traveled = 0;
+        let lastStep = new THREE.Vector3();
+
+        while (traveled <= maxDistance) {
+            const block = getBlockAt(voxel);
+
+            if (block !== 0) {
+                return {
+                    hitPos: voxel.clone(),
+                    placePos: voxel.clone().sub(lastStep),
+                    faceNormal: lastStep.clone(),
+                };
+            }
+
+            // Standard DDA step
+            if (tMax.x < tMax.y && tMax.x < tMax.z) {
+                voxel.x += step.x;
+                traveled = tMax.x;
+                tMax.x += tDelta.x;
+                lastStep.set(step.x, 0, 0);
+            } else if (tMax.y < tMax.z) {
+                voxel.y += step.y;
+                traveled = tMax.y;
+                tMax.y += tDelta.y;
+                lastStep.set(0, step.y, 0);
+            } else {
+                voxel.z += step.z;
+                traveled = tMax.z;
+                tMax.z += tDelta.z;
+                lastStep.set(0, 0, step.z);
+            }
+        }
+
+        return null;
+    }
+
     initInput() {
         document.addEventListener('keydown', (event) => {
             switch (event.code) {
@@ -62,12 +143,15 @@ export class Player {
                 case 'KeyD': this.moveRight = true; break;
                 case 'Space':
                     if (this.canJump) {
-                        this.velocity.y += 50;
+                        this.velocity.y += 20; // Jump speed
                         this.canJump = false;
                     }
                     break;
                 case 'ShiftLeft':
-                    this.velocity.y -= 50;
+                    this.isDescending = true; // Hold Shift to go down
+                    break;
+                case 'ControlLeft':
+                    this.isSprinting = true; // Sprinting
                     break;
             }
         });
@@ -78,57 +162,47 @@ export class Player {
                 case 'KeyA': this.moveLeft = false; break;
                 case 'KeyS': this.moveBackward = false; break;
                 case 'KeyD': this.moveRight = false; break;
-                case 'ShiftLeft': this.velocity.y -= 50; break;
+                case 'ShiftLeft':
+                    this.isDescending = false;
+                    break;
+                case 'ControlLeft':
+                    this.isSprinting = false;
+                    break;
             }
         });
 
         document.addEventListener('mousedown', (event) => {
             if (!this.controls.isLocked) return;
 
-            const maxDistance = 8;
-            const stepSize = 0.1;
+            const dir = new THREE.Vector3();
+            this.camera.getWorldDirection(dir);
 
-            const direction = new THREE.Vector3();
-            this.camera.getWorldDirection(direction);
             const origin = this.camera.position.clone();
 
-            let lastBlockPos = null;
+            const result = this.raycastVoxel(origin, dir, 8, (pos) => {
+                return this.chunkManager.returnBlockId(pos); // Your block getter
+            });
 
-            for (let d = 0; d < maxDistance; d += stepSize) {
-                const pos = origin.clone().addScaledVector(direction, d);
-                const blockPos = this.smartFloor(pos, direction);
+            if (!result) return;
 
-                if (!blockPos || !lastBlockPos || !blockPos.equals(lastBlockPos)) {
-                    lastBlockPos = blockPos.clone();
+            const { hitPos, placePos } = result;
+            const blockId = this.chunkManager.returnBlockId(hitPos);
 
-                    const blockId = this.chunkManager.returnBlockId(blockPos);
-                    if (blockId !== 0) {
-                        const placePos = blockPos.clone().add(direction.clone().negate().normalize()).floor();
-
-                        if (!placePos || isNaN(placePos.x)) {
-                            console.warn("Invalid placePos:", placePos);
-                            return;
-                        }
-
-                        switch (event.button) {
-                            case 0: // Left-click: place
-                                this.chunkManager.placeBlockAt(this.hotbar[this.selectedSlot], placePos);
-                                break;
-
-                            case 1: // Middle-click: pick
-                                this.hotbar[this.selectedSlot] = blockId;
-                                this.updateHotbarUI?.();
-                                break;
-
-                            case 2: // Right-click: break
-                                this.chunkManager.placeBlockAt(0, blockPos);
-                                break;
-                        }
-                        break;
-                    }
-                }
+            switch (event.button) {
+                case 0: // Left click - place
+                    this.chunkManager.placeBlockAt(this.hotbar[this.selectedSlot], placePos);
+                    break;
+                case 2: // Right click - break
+                    this.chunkManager.placeBlockAt(0, hitPos);
+                    break;
+                case 1: // Middle click - pick
+                    this.hotbar[this.selectedSlot] = blockId;
+                    this.updateHotbarUI?.();
+                    break;
             }
         });
+
+
     }
 
     smartFloor(pos, dir) {
@@ -182,9 +256,6 @@ export class Player {
         }
     }
 
-
-
-
     update(delta, blockId) {
         const velocity = this.velocity;
         const direction = this.direction;
@@ -196,11 +267,18 @@ export class Player {
         direction.x = Number(this.moveRight) - Number(this.moveLeft);
         direction.normalize();
 
-        if (this.moveForward || this.moveBackward) velocity.z -= direction.z * 400.0 * delta;
-        if (this.moveLeft || this.moveRight) velocity.x -= direction.x * 400.0 * delta;
+        const baseSpeed = 150.0;
+        const sprintMultiplier = this.isSprinting ? 2.0 : 1.0;
+        const speed = baseSpeed * sprintMultiplier;
+
+        if (this.moveForward || this.moveBackward) velocity.z -= direction.z * speed * delta;
+        if (this.moveLeft || this.moveRight) velocity.x -= direction.x * speed * delta;
 
         this.controls.moveRight(-velocity.x * delta);
         this.controls.moveForward(-velocity.z * delta);
+
+        if (this.isDescending) this.velocity.y -= 200 * delta;
+
         this.position.y += velocity.y * delta;
 
         const blockEntry = Object.values(BlockDict).find(b => b.id === blockId);
@@ -209,7 +287,29 @@ export class Player {
             this.position.y = Math.max(this.position.y, 10);
             this.canJump = true;
         }
+
+        const origin = this.camera.getWorldPosition(new THREE.Vector3()).add(
+            this.camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(0.01)
+        );
+
+        const dir = this.camera.getWorldDirection(new THREE.Vector3()).normalize();
+
+        const result = this.raycastVoxel(origin, dir, 8, pos => this.chunkManager.returnBlockId(pos));
+
+        if (result) {
+            this.marker.position.set(
+                result.hitPos.x + 0.5,
+                result.hitPos.y + 0.5,
+                result.hitPos.z + 0.5
+            );
+            this.marker.visible = true;
+        } else {
+            this.marker.visible = false;
+        }
+
+
     }
+
 
     getControls() {
         return this.controls;

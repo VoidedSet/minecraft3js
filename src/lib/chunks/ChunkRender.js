@@ -27,15 +27,14 @@ export class ChunkRenderer {
         for (const [id, count] of counts.entries()) {
             if (count === 0) continue;
 
-            // Find the block definition by ID
             const entry = Object.values(BlockDict).find(b => b.id === id);
-            if (!entry) continue; // Unknown ID
+            if (!entry) continue;
 
-            const type = entry.name.toLowerCase(); // e.g., "Grass" -> "grass"
+            const type = entry.name.toLowerCase();
             const mesh = new THREE.InstancedMesh(this.factory.create(type), this.material, count);
 
             this.scene.add(mesh);
-            meshes[id] = { mesh, index: 0, block: entry }; // Optionally keep the block data here too
+            meshes[id] = { mesh, index: 0, block: entry };
         }
 
         chunk.meshes = meshes;
@@ -48,10 +47,12 @@ export class ChunkRenderer {
                     const id = chunk.blocks[x][y][z];
                     if (!meshes[id]) continue;
 
-                    const worldX = cx * this.size + x;
-                    const worldZ = cz * this.size + z;
+                    // 🧠 Apply 0.5 offset to center each voxel
+                    const worldX = cx * this.size + x + 0.5;
+                    const worldY = y + 0.5;
+                    const worldZ = cz * this.size + z + 0.5;
 
-                    matrix.setPosition(worldX, y, worldZ);
+                    matrix.setPosition(worldX, worldY, worldZ);
                     meshes[id].mesh.setMatrixAt(meshes[id].index++, matrix);
                 }
             }
@@ -61,6 +62,7 @@ export class ChunkRenderer {
             entry.mesh.instanceMatrix.needsUpdate = true;
         }
     }
+
 
     reRender(chunk, cx, cz) {
         if (chunk.meshes) {
