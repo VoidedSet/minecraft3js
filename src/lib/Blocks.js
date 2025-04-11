@@ -5,6 +5,7 @@ export const BlockDict = {
         isSolid: false,
         isTransparent: true,
         isAnimated: false,
+        isLuminous: false,
         uv: null
     },
     grass: {
@@ -13,6 +14,7 @@ export const BlockDict = {
         isSolid: true,
         isTransparent: false,
         isAnimated: false,
+        isLuminous: false,
         uv: {
             top: [0, 0],
             side: [1, 0],
@@ -25,6 +27,7 @@ export const BlockDict = {
         isSolid: true,
         isTransparent: false,
         isAnimated: false,
+        isLuminous: false,
         uv: {
             top: [2, 0],
             side: [2, 0],
@@ -37,10 +40,50 @@ export const BlockDict = {
         isSolid: false,
         isTransparent: true,
         isAnimated: true,
+        isLuminous: false,
         uv: {
             top: [0, 15],
-            side: [0, 15],
-            bottom: [0, 15]
+            side: [6, 2],
+            bottom: [6, 2]
+        }
+    },
+    oak_log: {
+        id: 4,
+        name: "Oak Log",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [3, 1],
+            side: [2, 1],
+            bottom: [3, 1]
+        }
+    },
+    oak_leaves: {
+        id: 5,
+        name: "Oak Leaves",
+        isSolid: true,
+        isTransparent: true,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [4, 1],
+            side: [4, 1],
+            bottom: [4, 1]
+        }
+    },
+    sand: {
+        id: 6,
+        name: "Sand",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [0, 1],
+            side: [0, 1],
+            bottom: [0, 1]
         }
     },
     stone: {
@@ -49,6 +92,7 @@ export const BlockDict = {
         isSolid: true,
         isTransparent: false,
         isAnimated: false,
+        isLuminous: false,
         uv: {
             top: [3, 0],
             side: [3, 0],
@@ -61,6 +105,7 @@ export const BlockDict = {
         isSolid: true,
         isTransparent: false,
         isAnimated: false,
+        isLuminous: false,
         uv: {
             top: [4, 0],
             side: [4, 0],
@@ -73,51 +118,28 @@ export const BlockDict = {
         isSolid: true,
         isTransparent: false,
         isAnimated: false,
+        isLuminous: false,
         uv: {
             top: [5, 0],
             side: [5, 0],
             bottom: [5, 0]
         }
     },
-    sand: {
-        id: 6,
-        name: "Sand",
-        isSolid: true,
-        isTransparent: false,
+    torch: {
+        id: 10,
+        name: "Torch",
+        isSolid: false,
+        isTransparent: true,
         isAnimated: false,
+        isLuminous: true,
         uv: {
-            top: [0, 1],
-            side: [0, 1],
-            bottom: [0, 1]
+            top: [1, 2],
+            side: [0, 2],
+            bottom: [1, 2]
         }
-    },
-    oak_log: {
-        id: 4,
-        name: "Oak Log",
-        isSolid: true,
-        isTransparent: false,
-        isAnimated: false,
-        uv: {
-            top: [3, 1],
-            side: [2, 1],
-            bottom: [3, 1]
-        }
-
-    },
-    oak_leaves: {
-        id: 5,
-        name: "Oak leaves",
-        isSolid: true,
-        isTransparent: false,
-        isAnimated: true,
-        uv: {
-            top: [4, 1],
-            side: [4, 1],
-            bottom: [4, 1]
-        }
-
     }
 };
+
 
 export class BlockAtlas {
     constructor(texture, tileSize = 16, atlasSize = 256) {

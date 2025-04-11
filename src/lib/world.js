@@ -1,8 +1,9 @@
 import { makeNoise2D } from "open-simplex-noise";
 import { Chunk } from "./chunks/Chunk";
 import { ChunkRenderer } from "./chunks/ChunkRender";
+import * as THREE from 'three';
 
-export default class WorldBiomes {
+export default class World {
     constructor(scene, factory, material) {
         this.scene = scene;
         this.factory = factory;
@@ -20,7 +21,6 @@ export default class WorldBiomes {
         this.world = new Map();
         this.modifiedMap = new Map();
 
-
         this.biomeSettings = {
             ocean: { heightScale: 10, waterLevel: 12 },
             plains: { heightScale: 25, waterLevel: 10 },
@@ -28,6 +28,8 @@ export default class WorldBiomes {
         };
 
         this.init();
+
+        this.time = 0;
     }
 
     getBiome(wx, wz) {
@@ -79,6 +81,15 @@ export default class WorldBiomes {
                 this.world.set(key, chunk);
             }
         }
+
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+        this.scene.add(this.ambientLight);
+
+        this.sunLight = new THREE.DirectionalLight(0xffffff, 1.4);
+        this.sunLight.position.set(100, 100, 100);
+        this.scene.add(this.sunLight);
+
+        this.scene.fog = new THREE.FogExp2(0x87ceeb, 0.015);
     }
 
 
@@ -144,4 +155,42 @@ export default class WorldBiomes {
 
         player.controls.object.position.y++;
     }
+
+    dayNightCycle(delta, renderer) {
+        this.time += delta * 0.02;
+        this.time %= 1;
+
+        let lightFactor;
+        let sunsetFactor = 0;
+
+        if (this.time < 0.2) {
+            lightFactor = 0;
+        } else if (this.time < 0.4) {
+            lightFactor = THREE.MathUtils.smoothstep(this.time, 0.2, 0.4);
+            sunsetFactor = 1 - Math.abs((this.time - 0.3) / 0.1); // peaks at 0.3
+        } else if (this.time < 0.75) {
+            lightFactor = 1;
+        } else if (this.time < 0.95) {
+            lightFactor = 1 - THREE.MathUtils.smoothstep(this.time, 0.75, 0.95);
+            sunsetFactor = 1 - Math.abs((this.time - 0.85) / 0.1); // peaks at 0.85
+        } else {
+            lightFactor = 0;
+        }
+
+        this.ambientLight.intensity = THREE.MathUtils.lerp(0.2, 1.2, lightFactor);
+        this.sunLight.intensity = THREE.MathUtils.lerp(0.0, 2.0, lightFactor);
+
+        const nightColor = new THREE.Color(0x000000);
+        const dayColor = new THREE.Color(0x87ceeb);
+        const sunsetColor = new THREE.Color(0xff8c42);
+
+        const baseFog = new THREE.Color().lerpColors(nightColor, dayColor, lightFactor);
+        const finalFog = baseFog.lerp(sunsetColor, sunsetFactor);
+
+        this.scene.fog.color = finalFog;
+        this.scene.fog.density = THREE.MathUtils.lerp(0.025, 0.007, lightFactor);
+        renderer.setClearColor(finalFog);
+    }
+
+
 }

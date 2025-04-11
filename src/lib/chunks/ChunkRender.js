@@ -8,10 +8,19 @@ export class ChunkRenderer {
         this.material = material;
         this.size = size;
         this.maxHeight = 128;
+        this.tMaterial = material.clone();
+        this.tMaterial.side = THREE.FrontSide; // Ensures only front faces render
+        this.tMaterial.transparent = true;
+        this.tMaterial.alphaTest = 0.1;
+        this.tMaterial.depthWrite = false; // Prevent z-fighting/overdraw
+        this.tMaterial.depthTest = true;   // Keep depth test ON
+        // Prevent z-buffer artifacts
+        console.log(this.tMaterial)
     }
 
     render(chunk, cx, cz) {
-        const counts = new Array(10).fill(0);
+        const maxId = Math.max(...Object.values(BlockDict).map(b => b.id));
+        const counts = new Array(maxId + 1).fill(0);
 
         for (let x = 0; x < this.size; x++) {
             for (let y = 0; y < this.maxHeight; y++) {
@@ -31,7 +40,14 @@ export class ChunkRenderer {
             if (!entry) continue;
 
             const type = entry.name.toLowerCase();
-            const mesh = new THREE.InstancedMesh(this.factory.create(type), this.material, count);
+            let mesh;
+
+            if (entry.isTransparent) {
+                mesh = new THREE.InstancedMesh(this.factory.create(type), this.tMaterial, count);
+                mesh.renderOrder = 1;
+            } else {
+                mesh = new THREE.InstancedMesh(this.factory.create(type), this.material, count);
+            }
 
             this.scene.add(mesh);
             meshes[id] = { mesh, index: 0, block: entry };
@@ -62,7 +78,6 @@ export class ChunkRenderer {
             entry.mesh.instanceMatrix.needsUpdate = true;
         }
     }
-
 
     reRender(chunk, cx, cz) {
         if (chunk.meshes) {
