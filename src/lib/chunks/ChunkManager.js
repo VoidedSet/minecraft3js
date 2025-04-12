@@ -82,7 +82,7 @@ export default class ChunkManager {
         const renderer = new ChunkRenderer(scene, factory, material, chunkSize);
         renderer.reRender(chunk, cx, cz);
 
-        console.log(this.modifiedMap)
+        // console.log(this.modifiedMap)
 
         this.setModifiedBlock(key, blockPos, blockId)
     }
@@ -152,7 +152,8 @@ export default class ChunkManager {
 
         this.world.modifiedMap.get(chunkKey).set(blockKey, blockId);
 
-        console.log(this.world.modifiedMap)
+        // console.log(this.world.modifiedMap)
+        console.log(chunkKey, "\nblock coords", blockKey);
 
         // this.addRandomBlocksToChunk(this.world.modifiedMap, chunkKey)    
     }

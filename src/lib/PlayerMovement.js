@@ -22,7 +22,7 @@ export class Player {
         this.moveRight = false;
         this.canJump = false;
 
-        this.hotbar = [1, 2, 3, 4, 5, 6, 7, 8, 10];
+        this.hotbar = [1, 2, 3, 4, 5, 6, 7, 8, 11];
         this.selectedSlot = 0;
         this.maxSlots = 9;
 
@@ -31,12 +31,14 @@ export class Player {
             new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 })
         );
         this.marker.visible = false;
+        this.marker.renderOrder = 3;
         this.scene.add(this.marker);
 
         this.initUI();
         this.initInput();
         this.initHotbarScroll();
         this.updateHotbarUI();
+        this.initInventoryUI();
     }
 
     initUI() {
@@ -265,6 +267,45 @@ export class Player {
             }
         }
     }
+
+    initInventoryUI() {
+        const inventory = document.getElementById("inventory");
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "e") {
+                this.controls.unlock();
+                inventory.style.display = inventory.style.display === "none" ? "flex" : "none";
+            }
+        });
+
+        const texSize = 32; // if you use 512/16 = 32px per tile
+        const blockValues = Object.values(BlockDict);
+
+        for (const block of blockValues) {
+            const div = document.createElement("div");
+            div.className = "block-slot";
+
+            const [u, v] = block.uv?.top || [0, 0];
+
+            div.style.width = "16px";
+            div.style.height = "16px";
+            div.style.backgroundImage = "url('blocks.png')";
+            div.style.backgroundSize = "256px 256px"; // match your atlas
+            div.style.backgroundPosition = `-${u * texSize}px -${v * texSize}px`;
+            div.style.border = "2px solid #444";
+            div.style.margin = "4px";
+            div.style.cursor = "pointer";
+
+            div.onclick = () => {
+                // Add block to current selected hotbar slot
+                this.hotbar[this.selectedSlot] = block.id;
+                this.updateHotbarUI();
+                inventory.style.display = "none";
+            };
+
+            inventory.appendChild(div);
+        }
+    }
+
 
     update(delta, blockId) {
         const velocity = this.velocity;

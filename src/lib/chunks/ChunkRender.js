@@ -9,13 +9,11 @@ export class ChunkRenderer {
         this.size = size;
         this.maxHeight = 128;
         this.tMaterial = material.clone();
-        this.tMaterial.side = THREE.FrontSide; // Ensures only front faces render
+        this.tMaterial.side = THREE.FrontSide;
         this.tMaterial.transparent = true;
         this.tMaterial.alphaTest = 0.1;
-        this.tMaterial.depthWrite = false; // Prevent z-fighting/overdraw
-        this.tMaterial.depthTest = true;   // Keep depth test ON
-        // Prevent z-buffer artifacts
-        console.log(this.tMaterial)
+        this.tMaterial.depthWrite = false;
+        this.tMaterial.depthTest = true;
     }
 
     render(chunk, cx, cz) {

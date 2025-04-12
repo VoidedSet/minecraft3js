@@ -50,6 +50,18 @@
             background-image: url('blocks.png');
             background-size: 512px 512px;
         }
+
+        .block-slot {
+            width: 16px;
+            height: 16px;
+            background-size: cover;
+            border: 2px solid #555;
+            cursor: pointer;
+        }
+
+        .block-slot:hover {
+            border-color: yellow;
+        }
     </style>
 </head>
 
@@ -102,6 +114,11 @@
         </div>
 
     </div>
+
+    <div id="inventory"
+        style="display:none; position:fixed; top:10%; left:10%; background:#222; padding:10px; border-radius:8px; max-width:80%; flex-wrap:wrap; gap:8px; z-index:1000; display:none; flex-wrap:wrap;">
+    </div>
+
     <script type="module" src="src/main.js">
     </script>
 

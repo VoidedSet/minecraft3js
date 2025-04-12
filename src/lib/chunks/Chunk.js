@@ -1,11 +1,18 @@
+import { OCEAN_STRUCTURE } from "../Structures";
+import { MOUNTAIN_STRUCTURE } from "../Structures";
+
 export class Chunk {
-    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap) {
+    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap, biome) {
         this.cx = cx;
         this.cz = cz;
         this.size = size;
         this.maxHeight = 128;
         this.meshes;
         this.needsUpdate = false;
+        this.chunkHeigt = 0;
+
+        this.biome = biome;
+
         this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap);
     }
 
@@ -14,7 +21,10 @@ export class Chunk {
         // Generate chunk from noise normally
         const CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners);
 
+
         const key = `${this.cx},${this.cz}`;
+
+        this._generateStructures(CHUNK);
 
         if (modifiedMap.has(key)) {
             const modifiedBlocks = modifiedMap.get(key);
@@ -26,7 +36,7 @@ export class Chunk {
     }
 
 
-    _generateBaseChunk(chunkNoise, biomeCorners, modifiedMap) {
+    _generateBaseChunk(chunkNoise, biomeCorners) {
 
         const CHUNK = Array(this.size).fill().map(() =>
             Array(this.maxHeight).fill().map(() =>
@@ -69,6 +79,10 @@ export class Chunk {
 
                 for (let y = 0; y <= height; y++) {
                     let block = 0;
+
+                    if (y > this.chunkHeigt)
+                        this.chunkHeigt = y;
+
                     if (y === height) {
                         block = 1;
                     }
@@ -93,24 +107,85 @@ export class Chunk {
                     else if (CHUNK[x][y][z] === 1) CHUNK[x][y][z] = 6;
                 }
 
-                if (modifiedMap) {
-                    console.log("Modifying the chunk");
-                    for (const [key, blockId] of modifiedMap.entries()) {
-                        const [x, y, z] = key.split(',').map(Number);
-                        if (
-                            x >= 0 && x < this.size &&
-                            y >= 0 && y < this.maxHeight &&
-                            z >= 0 && z < this.size
-                        ) {
-                            CHUNK[x][y][z] = blockId === -1 ? 0 : blockId;
-                        }
-                    }
-                }
+
 
             }
         }
         return CHUNK;
     }
+
+    _generateStructures(CHUNK) {
+        if (this.biome === "ocean") {
+            // 20% chance to spawn the structure
+            const spawnChance = 0.01;
+            if (Math.random() > spawnChance) return;
+
+            const baseY = 11;
+
+            // Get structure dimensions
+            let maxX = 0, maxZ = 0;
+            for (const coord of Object.keys(OCEAN_STRUCTURE)) {
+                const [x, , z] = coord.split(',').map(Number);
+                if (x > maxX) maxX = x;
+                if (z > maxZ) maxZ = z;
+            }
+
+            // Offset to keep structure inside chunk
+            const offsetX = Math.floor(Math.random() * (this.size - maxX));
+            const offsetZ = Math.floor(Math.random() * (this.size - maxZ));
+
+            for (const [coord, blockId] of Object.entries(OCEAN_STRUCTURE)) {
+                const [x, y, z] = coord.split(',').map(Number);
+                const lx = offsetX + x;
+                const ly = baseY + y;
+                const lz = offsetZ + z;
+
+                if (
+                    lx >= 0 && lx < this.size &&
+                    ly >= 0 && ly < this.maxHeight &&
+                    lz >= 0 && lz < this.size
+                ) {
+                    CHUNK[lx][ly][lz] = blockId;
+                }
+            }
+        }
+
+        if (this.biome === "mountains") {
+            // 20% chance to spawn the structure
+            const spawnChance = 0.01;
+            if (Math.random() > spawnChance) return;
+
+            const baseY = this.chunkHeigt - 10;
+            console.log("mountain structure here")
+            // Get structure dimensions
+            let maxX = 0, maxZ = 0;
+            for (const coord of Object.keys(MOUNTAIN_STRUCTURE)) {
+                const [x, , z] = coord.split(',').map(Number);
+                if (x > maxX) maxX = x;
+                if (z > maxZ) maxZ = z;
+            }
+
+            // Offset to keep structure inside chunk
+            const offsetX = Math.floor(Math.random() * (this.size - maxX));
+            const offsetZ = Math.floor(Math.random() * (this.size - maxZ));
+
+            for (const [coord, blockId] of Object.entries(MOUNTAIN_STRUCTURE)) {
+                const [x, y, z] = coord.split(',').map(Number);
+                const lx = offsetX + x;
+                const ly = baseY + y;
+                const lz = offsetZ + z;
+
+                if (
+                    lx >= 0 && lx < this.size &&
+                    ly >= 0 && ly < this.maxHeight &&
+                    lz >= 0 && lz < this.size
+                ) {
+                    CHUNK[lx][ly][lz] = blockId;
+                }
+            }
+        }
+    }
+
 
     _applyModifications(CHUNK, modifiedBlocks) {
         if (!modifiedBlocks) return;

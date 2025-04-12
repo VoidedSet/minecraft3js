@@ -20,6 +20,11 @@ export class BlockGeometryFactory {
             geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
             return geo;
         }
+        else if (type === "water") {
+            const geo = new THREE.BoxGeometry(1, 0.79, 1);
+            geo.setAttribute('uv', new THREE.BufferAttribute(this.atlas.getUVs(type), 2));
+            return geo;
+        }
 
         const geo = new THREE.BoxGeometry(1, 1, 1);
         geo.setAttribute('uv', new THREE.BufferAttribute(this.atlas.getUVs(type), 2));

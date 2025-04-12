@@ -29,7 +29,7 @@ export default class World {
 
         this.init();
 
-        this.time = 0;
+        this.time = 0.2;
     }
 
     getBiome(wx, wz) {
@@ -65,7 +65,8 @@ export default class World {
                     this.chunkSize,
                     this.chunkHeightNoise,
                     { topLeft, topRight, bottomLeft, bottomRight }, // 4-corner biome data
-                    this.modifiedMap
+                    this.modifiedMap,
+                    this.getBiome(wx, wz)
                 );
 
                 const renderer = new ChunkRenderer(
@@ -90,20 +91,26 @@ export default class World {
         this.scene.add(this.sunLight);
 
         this.scene.fog = new THREE.FogExp2(0x87ceeb, 0.015);
-    }
 
-
-    printBiomeGrid() {
-        for (let cz = 0; cz < this.numChunks; cz++) {
-            let row = "";
-            for (let cx = 0; cx < this.numChunks; cx++) {
-                const wx = cx * this.chunkSize;
-                const wz = cz * this.chunkSize;
-                row += this.getBiome(wx, wz).padEnd(10, ' ') + " ";
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "f") {
+                this.downloadModifiedMap(this.modifiedMap)
             }
-            console.log(row);
-        }
+        });
+
     }
+
+    // printBiomeGrid() {
+    //     for (let cz = 0; cz < this.numChunks; cz++) {
+    //         let row = "";
+    //         for (let cx = 0; cx < this.numChunks; cx++) {
+    //             const wx = cx * this.chunkSize;
+    //             const wz = cz * this.chunkSize;
+    //             row += this.getBiome(wx, wz).padEnd(10, ' ') + " ";
+    //         }
+    //         console.log(row);
+    //     }
+    // }
 
     getBiomeCorners(cx, cz) {
         const wx = cx * this.chunkSize;
@@ -119,6 +126,10 @@ export default class World {
     }
 
     genChunks(cx, cz) {
+
+        const wx = cx * this.chunkSize;
+        const wz = cz * this.chunkSize;
+
         const key = `${cx},${cz}`;
         if (!this.world.has(key)) {
             if (this.modifiedMap.has(key))
@@ -130,7 +141,8 @@ export default class World {
                 this.chunkSize,
                 this.chunkHeightNoise,
                 this.getBiomeCorners(cx, cz),
-                this.modifiedMap
+                this.modifiedMap,
+                this.getBiome(wx, wz)
             );
             this.world.set(key, chunk);
 
@@ -157,7 +169,7 @@ export default class World {
     }
 
     dayNightCycle(delta, renderer) {
-        this.time += delta * 0.02;
+        this.time += delta * 0.01;
         this.time %= 1;
 
         let lightFactor;
@@ -190,6 +202,25 @@ export default class World {
         this.scene.fog.color = finalFog;
         this.scene.fog.density = THREE.MathUtils.lerp(0.025, 0.007, lightFactor);
         renderer.setClearColor(finalFog);
+    }
+
+    downloadModifiedMap(modifiedMap) {
+        const serializable = {};
+
+        for (const [chunkCoord, blockMap] of modifiedMap.entries()) {
+            serializable[chunkCoord] = Object.fromEntries(blockMap);
+        }
+
+        const json = JSON.stringify(serializable, null, 2);
+
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "modifiedMap.json";
+        a.click();
+
+        URL.revokeObjectURL(url);
     }
 
 
