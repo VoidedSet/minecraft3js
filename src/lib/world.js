@@ -29,7 +29,7 @@ export default class World {
 
         this.init();
 
-        this.time = 0.2;
+        this.time = 0.;
     }
 
     getBiome(wx, wz) {
@@ -189,14 +189,14 @@ export default class World {
             lightFactor = 0;
         }
 
-        this.ambientLight.intensity = THREE.MathUtils.lerp(0.2, 1.2, lightFactor);
+        this.ambientLight.intensity = THREE.MathUtils.lerp(0.15, 1.4, lightFactor);
         this.sunLight.intensity = THREE.MathUtils.lerp(0.0, 2.0, lightFactor);
 
         const nightColor = new THREE.Color(0x000000);
         const dayColor = new THREE.Color(0x87ceeb);
         const sunsetColor = new THREE.Color(0xff8c42);
 
-        const baseFog = new THREE.Color().lerpColors(nightColor, dayColor, lightFactor);
+        const baseFog = new THREE.Color().lerpColors(nightColor, dayColor, lightFactor + 0.5);
         const finalFog = baseFog.lerp(sunsetColor, sunsetFactor);
 
         this.scene.fog.color = finalFog;

@@ -9,14 +9,11 @@ export class ChunkRenderer {
         this.size = size;
         this.maxHeight = 128;
         this.tMaterial = material.clone();
-        this.tMaterial.side = THREE.FrontSide;
         this.tMaterial.transparent = true;
-        this.tMaterial.alphaTest = 0.1;
-        this.tMaterial.depthWrite = false;
-        this.tMaterial.depthTest = true;
     }
 
     render(chunk, cx, cz) {
+
         const maxId = Math.max(...Object.values(BlockDict).map(b => b.id));
         const counts = new Array(maxId + 1).fill(0);
 
@@ -41,10 +38,10 @@ export class ChunkRenderer {
             let mesh;
 
             if (entry.isTransparent) {
-                mesh = new THREE.InstancedMesh(this.factory.create(type), this.tMaterial, count);
+                mesh = new THREE.InstancedMesh(this.factory.create(type, chunk.biome), this.tMaterial, count);
                 mesh.renderOrder = 1;
             } else {
-                mesh = new THREE.InstancedMesh(this.factory.create(type), this.material, count);
+                mesh = new THREE.InstancedMesh(this.factory.create(type, chunk.biome), this.material, count);
             }
 
             this.scene.add(mesh);
@@ -61,7 +58,6 @@ export class ChunkRenderer {
                     const id = chunk.blocks[x][y][z];
                     if (!meshes[id]) continue;
 
-                    // 🧠 Apply 0.5 offset to center each voxel
                     const worldX = cx * this.size + x + 0.5;
                     const worldY = y + 0.5;
                     const worldZ = cz * this.size + z + 0.5;

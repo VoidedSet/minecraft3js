@@ -22,7 +22,7 @@ export class Player {
         this.moveRight = false;
         this.canJump = false;
 
-        this.hotbar = [1, 2, 3, 4, 5, 6, 7, 8, 11];
+        this.hotbar = [1, 2, 3, 4, 5, 6, 7, 8, 10];
         this.selectedSlot = 0;
         this.maxSlots = 9;
 
@@ -192,15 +192,11 @@ export class Player {
 
             switch (event.button) {
                 case 0: // Left click - place
-
-                    if (this.hotbar[this.selectedSlot] == 10) {
-                        const torch = new THREE.PointLight(0xffaa00, 5, 32); // intensity, distance
-                        torch.position.set(placePos);
-
-                        torch.position.set(placePos.x + 0.5, placePos.y + 1, placePos.z + 0.5); // slightly above the block
-
-                        this.scene.add(torch);
-                    }
+                    // if (this.hotbar[this.selectedSlot] == 10) {
+                    //     const light = new THREE.PointLight(0xffff00, 10, 30);
+                    //     this.scene.add(light)
+                    //     light.position.set(placePos.x, placePos.y + 1, placePos.z)
+                    // }
                     this.chunkManager.placeBlockAt(this.hotbar[this.selectedSlot], placePos)
 
                     break;

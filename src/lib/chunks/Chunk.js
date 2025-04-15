@@ -8,6 +8,7 @@ export class Chunk {
         this.size = size;
         this.maxHeight = 128;
         this.meshes;
+        this.lights;
         this.needsUpdate = false;
         this.chunkHeigt = 0;
 
@@ -102,8 +103,8 @@ export class Chunk {
                     }
                 }
 
-                for (let y = 0; y <= 10; y++) {
-                    if (CHUNK[x][y][z] === 0) CHUNK[x][y][z] = 3;
+                for (let y = 1; y <= 10; y++) {
+                    if (CHUNK[x][y][z] === 0 && y == 10) CHUNK[x][y][z] = 3;
                     else if (CHUNK[x][y][z] === 1) CHUNK[x][y][z] = 6;
                 }
 
@@ -115,7 +116,7 @@ export class Chunk {
     }
 
     _generateStructures(CHUNK) {
-        if (this.biome === "ocean") {
+        if (this.biome === "mountains") {
             // 20% chance to spawn the structure
             const spawnChance = 0.01;
             if (Math.random() > spawnChance) return;
@@ -150,7 +151,7 @@ export class Chunk {
             }
         }
 
-        if (this.biome === "mountains") {
+        if (this.biome === "ocean") {
             // 20% chance to spawn the structure
             const spawnChance = 0.01;
             if (Math.random() > spawnChance) return;

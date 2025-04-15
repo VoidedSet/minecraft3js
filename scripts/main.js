@@ -13,7 +13,6 @@ const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(40, 40, 50);
 controls.update();
 
-// Load Texture Atlas
 const textureLoader = new THREE.TextureLoader();
 const blockTexture = textureLoader.load('../blocks.png');
 
@@ -27,11 +26,10 @@ blockTexture.transparent = true;
 blockTexture.alphaTest = 0.5;
 
 
-const ATLAS_SIZE = 256;  // Atlas is 256x256
-const TILE_SIZE = 16;    // Each tile is 16x16
+const ATLAS_SIZE = 256;
+const TILE_SIZE = 16;
 const UV_SCALE = TILE_SIZE / ATLAS_SIZE;
 
-// UV Mapping
 const UVs = {
     grass: { top: [0, 0], side: [1, 0], bottom: [2, 0] },
     dirt: { top: [2, 0], side: [2, 0], bottom: [2, 0] },
@@ -41,56 +39,45 @@ const UVs = {
     water: { top: [0, 15], side: [0, 15], bottom: [0, 15] },
     sand: { top: [0, 1], side: [0, 1], bottom: [0, 1] }
 };
-
-// Function to Get UVs
 function getUVs(type) {
     if (!UVs[type]) {
         console.error(`UV mapping for ${type} not found`);
         return;
     }
-
     let { top, side, bottom } = UVs[type];
-
     const uvs = new Float32Array([
-        ...getFaceUV(side),  // Top
-        ...getFaceUV(side),  // Bottom
-        ...getFaceUV(top),  // Left
-        ...getFaceUV(bottom),  // Right
-        ...getFaceUV(side),  // Front
-        ...getFaceUV(side)   // Back
+        ...getFaceUV(side),
+        ...getFaceUV(side),
+        ...getFaceUV(top),
+        ...getFaceUV(bottom),
+        ...getFaceUV(side),
+        ...getFaceUV(side)
     ]);
-
     return uvs;
 }
+
 function getFaceUV([x, y]) {
     return [
-        x * UV_SCALE, y * UV_SCALE,          // Bottom-left  (flip Y)
-        (x + 1) * UV_SCALE, y * UV_SCALE,    // Bottom-right (flip Y)
-        (x + 1) * UV_SCALE, (y + 1) * UV_SCALE, // Top-right
-        x * UV_SCALE, (y + 1) * UV_SCALE     // Top-left
+        x * UV_SCALE, y * UV_SCALE,          // bl)
+        (x + 1) * UV_SCALE, y * UV_SCALE,    // br
+        (x + 1) * UV_SCALE, (y + 1) * UV_SCALE, // tr
+        x * UV_SCALE, (y + 1) * UV_SCALE     // tl
     ];
 }
 
-// Create Geometry with UVs
 function createBlockGeometry(type) {
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const uvs = getUVs(type);
     geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     return geometry;
 }
-
-// Materials
 const material = new THREE.MeshBasicMaterial({ map: blockTexture });
-
-// CHUNKS
 const noise2D = makeNoise2D(Date.now());
 const chunks = []
-
 const CHUNK_SIZE = 32;
 const HEIGHT_SCALE = 30;
 const WATER_LEVEL = 10;
 const NUM_CHUNKS = 1;
-
 const BLOCK_AIR = 0;
 const BLOCK_GRASS = 1;
 const BLOCK_DIRT = 2;
@@ -99,19 +86,13 @@ const BLOCK_SAND = 6;
 const BLOCK_STONE = 7;
 const BLOCK_COAL = 8;
 const BLOCK_IRON = 9;
-
-
 function generateChunk(cx, cz) {
     let chunk = new Array(CHUNK_SIZE).fill().map(() =>
         new Array(CHUNK_SIZE).fill().map(() =>
             new Array(CHUNK_SIZE).fill(BLOCK_AIR)
         )
     );
-
-    // Populate terrain using Perlin noise
-    // Reset block counts
     let grassCount = 0, dirtCount = 0, waterCount = 0, sandCount = 0, stoneCount = 0, coalCount = 0, ironCount = 0;
-
     for (let x = 0; x < CHUNK_SIZE; x++) {
         for (let z = 0; z < CHUNK_SIZE; z++) {
             let worldX = cx * CHUNK_SIZE + x;

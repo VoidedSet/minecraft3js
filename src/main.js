@@ -33,7 +33,12 @@ texture.alphaTest = 0.5;
 
 const atlas = new BlockAtlas(texture);
 const factory = new BlockGeometryFactory(atlas);
-const material = new THREE.MeshLambertMaterial({ map: texture });
+const material = new THREE.MeshLambertMaterial({
+    map: texture,
+    vertexColors: true
+});
+
+
 
 const world = new World(scene, factory, material);
 const chunkManager = new ChunkManager(world.chunkSize, 16, world, world.modifiedMap);
