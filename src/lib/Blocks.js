@@ -169,17 +169,69 @@ export const BlockDict = {
     },
     wooden_planks: {
         id: 13,
-        name: "Wooden Planks",
+        name: "Oak Planks",
         isSolid: true,
         isTransparent: false,
         isAnimated: false,
         isLuminous: false,
         uv: {
-            top: [6, 1],
-            side: [6, 1],
-            bottom: [6, 1]
+            top: [10, 1],
+            side: [10, 1],
+            bottom: [10, 1]
         }
-    }
+    },
+    snow: {
+        id: 14,
+        name: "Snow",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [8, 0],
+            side: [7, 0],
+            bottom: [2, 0]
+        }
+    },
+    spruce_log: {
+        id: 15,
+        name: "Spruce Log",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [5, 3],
+            side: [4, 3],
+            bottom: [5, 3]
+        }
+    },
+    spruce_leaves: {
+        id: 16,
+        name: "Spruce Leaves",
+        isSolid: true,
+        isTransparent: true,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [6, 3],
+            side: [6, 3],
+            bottom: [6, 3]
+        }
+    },
+    mycelium: {
+        id: 17,
+        name: "Mycelium",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [10, 0],
+            side: [9, 0],
+            bottom: [2, 0]
+        }
+    },
 };
 
 // export const BlockDict = {

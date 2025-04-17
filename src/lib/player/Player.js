@@ -69,8 +69,10 @@ export class Player {
 
                     break;
                 case 2: // Right click - break
-                    if (this.chunkManager.returnBlockId(hitPos) === 10)
-                        this.scene.remove(light)
+                    if (this.chunkManager.returnBlockId(hitPos) === 10) {
+                        this.scene.remove(light);
+                        console.log(light)
+                    }
 
                     this.chunkManager.placeBlockAt(0, hitPos);
                     break;

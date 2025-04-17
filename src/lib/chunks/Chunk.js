@@ -8,9 +8,8 @@ export class Chunk {
         this.size = size;
         this.maxHeight = 128;
         this.meshes;
-        this.lights;
         this.needsUpdate = false;
-        this.chunkHeigt = 0;
+        this.chunkHeight = 0;
 
         this.biome = biome;
 
@@ -59,7 +58,6 @@ export class Chunk {
                 const br = biomeCorners.bottomRight;
 
                 const heightScale = this.bilerp(tl.heightScale, tr.heightScale, bl.heightScale, br.heightScale, tx, tz);
-                const waterLevel = this.bilerp(tl.waterLevel, tr.waterLevel, bl.waterLevel, br.waterLevel, tx, tz);
 
                 const baseFreq = 0.01;
                 const octaves = 3;
@@ -77,15 +75,21 @@ export class Chunk {
                 noiseVal = (noiseVal / maxAmp + 1) / 2;
                 const height = Math.floor(noiseVal * heightScale);
                 const stoneDepth = Math.floor(noiseVal + 1);
+                const snowLine = 35 + Math.floor(Math.random() * 20);
 
                 for (let y = 0; y <= height; y++) {
                     let block = 0;
 
-                    if (y > this.chunkHeigt)
-                        this.chunkHeigt = y;
+                    if (y > this.chunkHeight)
+                        this.chunkHeight = y;
 
                     if (y === height) {
-                        block = 1;
+                        if ((this.biome == 'mountains' || this.biome == 'hills') && y >= snowLine)
+                            block = 14; // snow
+                        else if (this.biome == 'mushroom_fields')
+                            block = 17;
+                        else
+                            block = 1; //grass
                     }
                     else if (y >= height - stoneDepth) block = 2;
                     else {
@@ -111,58 +115,20 @@ export class Chunk {
                         else
                             CHUNK[x][y][z] = 6;
                     }
-
                 }
-
-
-
             }
         }
         return CHUNK;
     }
 
     _generateStructures(CHUNK) {
-        if (this.biome === "mountains") {
-            // 20% chance to spawn the structure
-            const spawnChance = 0.01;
-            if (Math.random() > spawnChance) return;
-
-            const baseY = 11;
-
-            // Get structure dimensions
-            let maxX = 0, maxZ = 0;
-            for (const coord of Object.keys(OCEAN_STRUCTURE)) {
-                const [x, , z] = coord.split(',').map(Number);
-                if (x > maxX) maxX = x;
-                if (z > maxZ) maxZ = z;
-            }
-
-            // Offset to keep structure inside chunk
-            const offsetX = Math.floor(Math.random() * (this.size - maxX));
-            const offsetZ = Math.floor(Math.random() * (this.size - maxZ));
-
-            for (const [coord, blockId] of Object.entries(OCEAN_STRUCTURE)) {
-                const [x, y, z] = coord.split(',').map(Number);
-                const lx = offsetX + x;
-                const ly = baseY + y;
-                const lz = offsetZ + z;
-
-                if (
-                    lx >= 0 && lx < this.size &&
-                    ly >= 0 && ly < this.maxHeight &&
-                    lz >= 0 && lz < this.size
-                ) {
-                    CHUNK[lx][ly][lz] = blockId;
-                }
-            }
-        }
 
         if (this.biome === "ocean") {
             // 20% chance to spawn the structure
             const spawnChance = 0.01;
             if (Math.random() > spawnChance) return;
 
-            const baseY = this.chunkHeigt - 10;
+            const baseY = this.chunkHeight - 10;
             console.log("mountain structure here")
             // Get structure dimensions
             let maxX = 0, maxZ = 0;
@@ -238,12 +204,21 @@ export class Chunk {
     }
 
     placeTree(chunk, x, y, z) {
-        const height = 2 + Math.floor(Math.random() * 4);
+        let height = 0;
+        if (this.biome == 'hills' || this.biome == 'mountains') {
+            height = 3 + Math.floor(Math.random() * 4)
+        }
+        else {
+            height = 2 + Math.floor(Math.random() * 4);
+        }
 
         for (let i = 0; i < height; i++) {
             const yy = y + i + 1;
             if (yy < this.maxHeight) {
-                chunk[x][yy][z] = 4; // log
+                if (this.biome == 'hills' || this.biome == 'mountains')
+                    chunk[x][yy][z] = 15; // log
+                else
+                    chunk[x][yy][z] = 4;
             }
         }
 
@@ -261,7 +236,10 @@ export class Chunk {
                         chunk[lx][ly][lz] === 0 &&
                         Math.random() > 0.2
                     ) {
-                        chunk[lx][ly][lz] = 5; // leaves
+                        if (this.biome == 'hills' || this.biome == 'mountains')
+                            chunk[lx][ly][lz] = 16; // log
+                        else
+                            chunk[lx][ly][lz] = 5; // leaves
                     }
                 }
             }

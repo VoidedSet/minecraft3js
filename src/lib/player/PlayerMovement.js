@@ -10,11 +10,10 @@ export class PlayerMovement {
         this.moveBackward = false;
         this.moveLeft = false;
         this.moveRight = false;
-        this.canJump = false;
+        this.wantsToJump = false;
         this.isSprinting = false;
         this.isDescending = false;
-
-        this.wantsToJump = false;
+        this.isFlying = false;
 
         this.initInput();
     }
@@ -29,6 +28,7 @@ export class PlayerMovement {
                 case 'Space': this.wantsToJump = true; break;
                 case 'ShiftLeft': this.isDescending = true; break;
                 case 'ControlLeft': this.isSprinting = true; break;
+                case 'KeyQ': this.isFlying = !this.isFlying; break;
             }
         });
 
@@ -48,52 +48,63 @@ export class PlayerMovement {
         const velocity = this.velocity;
         const direction = this.direction;
 
-        // Jump logic
-        if (this.wantsToJump && this.player.onGround) {
-            this.velocity.y = Math.max(this.velocity.y, 5);
-            this.wantsToJump = false;
-            this.player.onGround = false; // force off-ground to avoid double jumping
-        }
+        const camDir = new THREE.Vector3();
+        this.player.camera.getWorldDirection(camDir);
+        camDir.normalize();
 
-        // Gravity
-        if (!this.player.onGround) {
-            this.velocity.y -= 12 * delta;
-        } else if (this.isDescending) {
-            this.velocity.y = -5;
-        }
+        const right = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
+        const up = new THREE.Vector3(0, 1, 0);
 
-        // Smooth stop
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
-
-        // Movement direction
+        // Clear direction every frame
         direction.set(0, 0, 0);
         if (this.moveForward) direction.z += 1;
         if (this.moveBackward) direction.z -= 1;
         if (this.moveLeft) direction.x -= 1;
         if (this.moveRight) direction.x += 1;
+
         direction.normalize();
 
-        // Get camera yaw
-        const cameraYaw = new THREE.Vector3();
-        this.player.camera.getWorldDirection(cameraYaw);
-        cameraYaw.y = 0;
-        cameraYaw.normalize();
-
-        const right = new THREE.Vector3().crossVectors(cameraYaw, new THREE.Vector3(0, 1, 0)).normalize();
+        // Movement speed
         const speed = 55 * (this.isSprinting ? 1.5 : 1);
 
-        // Apply velocity
-        velocity.addScaledVector(cameraYaw, direction.z * speed * delta);
-        velocity.addScaledVector(right, direction.x * speed * delta);
+        if (this.isFlying) {
+            // Reset velocity
+            velocity.set(0, 0, 0);
 
-        // Collision + ground detection
-        this.player.physics.update(velocity);
+            // Fly in camera direction
+            velocity.addScaledVector(camDir, direction.z * speed * delta);
+            velocity.addScaledVector(right, direction.x * speed * delta);
 
-        // Apply movement
-        this.player.position.addScaledVector(velocity, delta);
+            // Vertical control
+            if (this.wantsToJump) velocity.y += speed * delta;
+            if (this.isDescending) velocity.y -= speed * delta;
 
-        // Update camera position
-        this.player.controls.object.position.copy(this.player.position).sub(new THREE.Vector3(0, 0.4, 0));
+            // Apply
+            this.player.position.add(velocity);
+            this.player.controls.object.position.copy(this.player.position).sub(new THREE.Vector3(0, 0.4, 0));
+
+            // Reset jump
+            this.wantsToJump = false;
+
+        } else {
+            // Not flying = grounded movement
+            if (this.wantsToJump && this.player.onGround) {
+                velocity.y = 5;
+                this.wantsToJump = false;
+            }
+
+            velocity.y -= 12 * delta; // Gravity
+            if (this.player.onGround && velocity.y < 0) velocity.y = 0;
+
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+
+            velocity.addScaledVector(camDir, direction.z * speed * delta);
+            velocity.addScaledVector(right, direction.x * speed * delta);
+
+            this.player.position.addScaledVector(velocity, delta);
+            this.player.physics.update(velocity);
+            this.player.controls.object.position.copy(this.player.position).sub(new THREE.Vector3(0, 0.4, 0));
+        }
     }
 }

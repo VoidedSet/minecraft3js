@@ -5,6 +5,7 @@ import { BlockGeometryFactory } from './lib/BlockGeometryFactory.js';
 import { Player } from './lib/player/Player.js';
 import ChunkManager from './lib/chunks/ChunkManager.js';
 import World from './lib/World.js';
+import { Environment } from './lib/Sky.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -15,6 +16,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // or BasicShadowMap for performance
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 renderer.setClearColor(0x87ceeb);
 
@@ -46,13 +48,16 @@ const clock = new THREE.Clock();
 
 world.safeSpawn(player);
 
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+const sky = new Environment(scene, renderer);
+
+const light = new THREE.AmbientLight(0xffffff, 4)
+// scene.add(light)
 
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta();
-
-    world.dayNightCycle(delta, renderer);
+    let delta = clock.getDelta();
+    delta = Math.min(delta, 0.05);
+    sky.update(delta, player.position);
 
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)

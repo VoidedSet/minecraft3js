@@ -16,7 +16,7 @@ export default class ChunkManager {
         const chunkSize = world.chunkSize;
         const cx = Math.floor(pos.x / chunkSize);
         const cz = Math.floor(pos.z / chunkSize);
-        const radius = 4;
+        const radius = 6;
 
         if (cx !== this.lastDebugChunkX || cz !== this.lastDebugChunkZ) {
             this.lastDebugChunkX = cx;

@@ -6,10 +6,9 @@ export class PlayerPhysics {
         this.player = player;
         this.chunkManager = chunkManager;
 
-        // Collider aligned bottom-center, 2 blocks tall
         this.collider = {
             size: new THREE.Vector3(0.6, 2.0, 0.6),
-            offset: new THREE.Vector3(0, 1.0, 0) // center of the collider is at y = 1.0 (half the height)
+            offset: new THREE.Vector3(0, 1.0, 0)
         };
 
         this.overlapRegion = {
@@ -19,8 +18,6 @@ export class PlayerPhysics {
     }
 
     update(velocity) {
-        let onGround = false;
-
         this.updateCollider();
 
         const min = this.colliderMin;
@@ -28,6 +25,8 @@ export class PlayerPhysics {
 
         const start = this.overlapRegion.startPos;
         const end = this.overlapRegion.endPos;
+
+        let onGround = false;
 
         for (let x = start.x; x <= end.x; x++) {
             for (let y = start.y; y <= end.y; y++) {
@@ -38,15 +37,14 @@ export class PlayerPhysics {
                         const blockMax = new THREE.Vector3(x + 1, y + 1, z + 1);
 
                         if (this.aabbIntersect(min, max, blockMin, blockMax)) {
-                            const collidedBelow = this.resolveCollision(min, max, blockMin, blockMax, velocity);
-                            if (collidedBelow) onGround = true;
+                            const below = this.resolveCollision(min, max, blockMin, blockMax, velocity);
+                            if (below) onGround = true;
                         }
                     }
                 }
             }
         }
 
-        // Final grounded state
         this.player.onGround = onGround;
     }
 
@@ -95,7 +93,7 @@ export class PlayerPhysics {
             const push = maxA.y - minB.y < maxB.y - minA.y ? -overlaps.y : overlaps.y;
             this.player.position.y += push;
             velocity.y = 0;
-            return push > 0; // if pushed from above, we're on the ground
+            return push > 0; // pushed upward = hit ground
         } else if (axis === 'z') {
             const push = maxA.z - minB.z < maxB.z - minA.z ? -overlaps.z : overlaps.z;
             this.player.position.z += push;
@@ -106,7 +104,6 @@ export class PlayerPhysics {
     }
 
     smallestAxis(overlaps) {
-        const sorted = Object.entries(overlaps).sort((a, b) => a[1] - b[1]);
-        return sorted[0][0];
+        return Object.entries(overlaps).sort((a, b) => a[1] - b[1])[0][0];
     }
 }

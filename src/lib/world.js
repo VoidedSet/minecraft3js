@@ -1,7 +1,6 @@
 import { makeNoise2D } from "open-simplex-noise";
 import { Chunk } from "./chunks/Chunk";
 import { ChunkRenderer } from "./chunks/ChunkRender";
-import * as THREE from 'three';
 
 export default class World {
     constructor(scene, factory, material) {
@@ -22,22 +21,34 @@ export default class World {
         this.modifiedMap = new Map();
 
         this.biomeSettings = {
-            ocean: { heightScale: 10, waterLevel: 12 },
+            ocean: { heightScale: 5, waterLevel: 12 },
             plains: { heightScale: 25, waterLevel: 10 },
-            mountains: { heightScale: 60, waterLevel: 5 }
+            hills: { heightScale: 40, waterLevel: 9 },
+            mushroom_fields: { heightScale: 12, waterLevel: 13 },
+            mountains: { heightScale: 100, waterLevel: 5 }
         };
 
-        this.init();
 
-        this.time = 0.;
+        this.init();
     }
 
     getBiome(wx, wz) {
-        const value = this.biomeNoise(wx * 0.005, wz * 0.001);
-        if (value < -0.3) return "ocean";
-        if (value < 0.2) return "plains";
+        const noiseVal = this.biomeNoise(wx * 0.005, wz * 0.001);
+
+        // Random seed for swamp chance
+        const rand = Math.abs(this.biomeNoise(wx * 0.01 + 100, wz * 0.01 - 100));
+
+        if (noiseVal < -0.4) return "ocean";
+
+        // SWAMP 10% CHANCE in transitional zones
+        if (noiseVal >= -0.4 && noiseVal < -0.1 && rand < 0.1) return "mushroom_fields";
+
+        if (noiseVal < 0.3) return "plains";
+        if (noiseVal < 0.4) return "hills";
+
         return "mountains";
     }
+
 
     getBiomeParams(wx, wz) {
         const biome = this.getBiome(wx, wz);
@@ -83,15 +94,6 @@ export default class World {
                 this.world.set(key, chunk);
             }
         }
-
-        this.ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
-        this.scene.add(this.ambientLight);
-
-        this.sunLight = new THREE.DirectionalLight(0xffffff, 1.4);
-        this.sunLight.position.set(100, 100, 100);
-        this.scene.add(this.sunLight);
-
-        this.scene.fog = new THREE.FogExp2(0x87ceeb, 0.015);
 
         document.addEventListener("keydown", (e) => {
             if (e.key === "f") {
@@ -168,42 +170,6 @@ export default class World {
 
         player.controls.object.position.y += 3;
 
-    }
-
-    dayNightCycle(delta, renderer) {
-        this.time += delta * 0.01;
-        this.time %= 1;
-
-        let lightFactor;
-        let sunsetFactor = 0;
-
-        if (this.time < 0.2) {
-            lightFactor = 0;
-        } else if (this.time < 0.4) {
-            lightFactor = THREE.MathUtils.smoothstep(this.time, 0.2, 0.4);
-            sunsetFactor = 1 - Math.abs((this.time - 0.3) / 0.1); // peaks at 0.3
-        } else if (this.time < 0.75) {
-            lightFactor = 1;
-        } else if (this.time < 0.95) {
-            lightFactor = 1 - THREE.MathUtils.smoothstep(this.time, 0.75, 0.95);
-            sunsetFactor = 1 - Math.abs((this.time - 0.85) / 0.1); // peaks at 0.85
-        } else {
-            lightFactor = 0;
-        }
-
-        this.ambientLight.intensity = THREE.MathUtils.lerp(0.15, 1.4, lightFactor);
-        this.sunLight.intensity = THREE.MathUtils.lerp(0.0, 2.0, lightFactor);
-
-        const nightColor = new THREE.Color(0x000000);
-        const dayColor = new THREE.Color(0x87ceeb);
-        const sunsetColor = new THREE.Color(0xff8c42);
-
-        const baseFog = new THREE.Color().lerpColors(nightColor, dayColor, lightFactor + 0.5);
-        const finalFog = baseFog.lerp(sunsetColor, sunsetFactor);
-
-        this.scene.fog.color = finalFog;
-        this.scene.fog.density = THREE.MathUtils.lerp(0.025, 0.007, lightFactor);
-        renderer.setClearColor(finalFog);
     }
 
     downloadModifiedMap(modifiedMap) {

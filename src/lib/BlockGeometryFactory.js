@@ -13,7 +13,7 @@ export class BlockGeometryFactory {
         // };
 
         this.biomeColors = {
-            swamp: [0x4c / 255, 0x76 / 255, 0x3c / 255],               // #4c763c
+            swamps: [0x4c / 255, 0x76 / 255, 0x3c / 255],               // #4c763c
             dark_forest: [0x50 / 255, 0x7a / 255, 0x32 / 255],         // #507a32
             badlands: [0x90 / 255, 0x81 / 255, 0x4d / 255],            // #90814d
             savanna: [0xbf / 255, 0xb7 / 255, 0x55 / 255],             // #bfb755
@@ -21,11 +21,11 @@ export class BlockGeometryFactory {
             stony_peaks: [0x9a / 255, 0xbe / 255, 0xb4 / 255],         // #9abe4b
             plains: [0x91 / 255, 0xbd / 255, 0x59 / 255],              // #91bd59
             ocean: [0x8e / 255, 0xb9 / 255, 0x71 / 255],               // #8eb971
-            windswept_hills: [0x8a / 255, 0xb6 / 255, 0x89 / 255],     // #8ab689
+            hills: [0x8a / 255, 0xb6 / 255, 0x89 / 255],     // #8ab689
             snowy_plains: [0x80 / 255, 0xb4 / 255, 0x97 / 255],        // #80b497
             snowy_beach: [0x83 / 255, 0xb5 / 255, 0x93 / 255],         // #83b593
             taiga: [0x86 / 255, 0xb7 / 255, 0x83 / 255],               // #86b783
-            old_growth_pine_taiga: [0x86 / 255, 0xb7 / 255, 0x8f / 255], // #86b78f
+            mountains: [0x86 / 255, 0xb7 / 255, 0x8f / 255], // #86b78f
             meadow: [0x83 / 255, 0xbb / 255, 0x6d / 255],              // #83bb6d
             birch_forest: [0x88 / 255, 0xbb / 255, 0x67 / 255],        // #88bb67
             forest: [0x79 / 255, 0xc0 / 255, 0x5a / 255],              // #79c05a
