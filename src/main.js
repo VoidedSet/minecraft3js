@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { BlockAtlas } from './lib/Blocks.js';
 import { BlockGeometryFactory } from './lib/BlockGeometryFactory.js';
-import { Player } from './lib/PlayerMovement.js';
+import { Player } from './lib/player/Player.js';
 import ChunkManager from './lib/chunks/ChunkManager.js';
 import World from './lib/World.js';
 
@@ -38,12 +38,10 @@ const material = new THREE.MeshLambertMaterial({
     vertexColors: true
 });
 
-
-
 const world = new World(scene, factory, material);
 const chunkManager = new ChunkManager(world.chunkSize, 16, world, world.modifiedMap);
 
-const player = new Player(scene, camera, chunkManager);
+const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
 
 world.safeSpawn(player);

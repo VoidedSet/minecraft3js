@@ -48,6 +48,12 @@ export default class World {
     }
 
     init() {
+        const renderer = new ChunkRenderer(
+            this.scene,
+            this.factory,
+            this.material,
+            this.chunkSize
+        );
         for (let cx = 0; cx < this.numChunks; cx++) {
             for (let cz = 0; cz < this.numChunks; cz++) {
                 const wx = cx * this.chunkSize;
@@ -69,12 +75,7 @@ export default class World {
                     this.getBiome(wx, wz)
                 );
 
-                const renderer = new ChunkRenderer(
-                    this.scene,
-                    this.factory,
-                    this.material,
-                    this.chunkSize
-                );
+
 
                 renderer.render(chunk, cx, cz);
 
@@ -165,7 +166,8 @@ export default class World {
         while (chunk.blocks[8][player.controls.object.position.y][8] != 0)
             player.controls.object.position.y++;
 
-        player.controls.object.position.y++;
+        player.controls.object.position.y += 3;
+
     }
 
     dayNightCycle(delta, renderer) {

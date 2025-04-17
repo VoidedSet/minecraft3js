@@ -105,7 +105,13 @@ export class Chunk {
 
                 for (let y = 1; y <= 10; y++) {
                     if (CHUNK[x][y][z] === 0 && y == 10) CHUNK[x][y][z] = 3;
-                    else if (CHUNK[x][y][z] === 1) CHUNK[x][y][z] = 6;
+                    else if (CHUNK[x][y][z] === 1) {
+                        if (y < 7)
+                            CHUNK[x][y][z] = 7;
+                        else
+                            CHUNK[x][y][z] = 6;
+                    }
+
                 }
 
 

@@ -1,4 +1,5 @@
 // for blocks.png
+export const NonSolidBlockIds = new Set([0, 3, 10]);
 
 export const BlockDict = {
     air: {
@@ -156,7 +157,7 @@ export const BlockDict = {
     granite: {
         id: 12,
         name: "Granite",
-        isSolid: false,
+        isSolid: true,
         isTransparent: false,
         isAnimated: false,
         isLuminous: false,
