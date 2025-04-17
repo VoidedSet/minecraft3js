@@ -7,6 +7,9 @@ export default class ChunkManager {
         this.world = world;
         this.modifiedMap = modifiedMap;
 
+        this.renderer = new ChunkRenderer(world.scene, world.factory, world.material, chunkSize);
+
+
         this.lastDebugChunkX = null;
         this.lastDebugChunkZ = null;
     }
@@ -41,7 +44,16 @@ export default class ChunkManager {
                 if (!toKeep.has(k)) {
                     for (const { mesh } of Object.values(chunk.meshes)) {
                         world.scene.remove(mesh);
+                        if (mesh.geometry) mesh.geometry.dispose();
+                        if (mesh.material) {
+                            if (Array.isArray(mesh.material)) {
+                                mesh.material.forEach(mat => mat.dispose());
+                            } else {
+                                mesh.material.dispose();
+                            }
+                        }
                     }
+
                     world.world.delete(k);
                 }
             }
@@ -50,11 +62,20 @@ export default class ChunkManager {
             const wz = cz * chunkSize;
             const biome = world.getBiome(wx, wz);
             console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
+
+            // 🔥 Add this logging block here:
+            console.log(
+                `Chunks loaded: ${world.world.size}`,
+                performance.memory
+                    ? `Memory usage: ${(performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`
+                    : "Memory usage: N/A (performance.memory unsupported)"
+            );
         }
     }
 
+
     placeBlockAt(blockId, targetPos) {
-        const { chunkSize, scene, factory, material } = this.world;
+        const { chunkSize } = this.world;
 
         const cx = Math.floor(targetPos.x / chunkSize);
         const cz = Math.floor(targetPos.z / chunkSize);
@@ -79,8 +100,7 @@ export default class ChunkManager {
             z: lz
         };
         chunk.updateBlock(lx, ly, lz, blockId);
-        const renderer = new ChunkRenderer(scene, factory, material, chunkSize);
-        renderer.reRender(chunk, cx, cz);
+        this.renderer.reRender(chunk, cx, cz);
 
         // console.log(this.modifiedMap)
 

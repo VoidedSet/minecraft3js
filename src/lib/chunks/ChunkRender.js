@@ -75,13 +75,29 @@ export class ChunkRenderer {
 
     reRender(chunk, cx, cz) {
         if (chunk.meshes) {
-            for (const { mesh } of Object.values(chunk.meshes)) {
+            for (const key of Object.keys(chunk.meshes)) {
+                const { mesh } = chunk.meshes[key];
+
                 this.scene.remove(mesh);
-                mesh.geometry.dispose();  // optional cleanup
-                mesh.material.dispose(); // optional cleanup
+
+                if (mesh.geometry) {
+                    mesh.geometry.dispose();
+                }
+
+                if (mesh.material) {
+                    // In case of multi-material
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material.forEach(m => m.dispose());
+                    } else {
+                        mesh.material.dispose();
+                    }
+                }
+
+                delete chunk.meshes[key]; // important to clear references
             }
         }
 
         this.render(chunk, cx, cz);
     }
+
 }

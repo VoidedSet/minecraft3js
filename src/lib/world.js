@@ -28,6 +28,12 @@ export default class World {
             mountains: { heightScale: 100, waterLevel: 5 }
         };
 
+        this.crenderer = new ChunkRenderer(
+            this.scene,
+            this.factory,
+            this.material,
+            this.chunkSize
+        );
 
         this.init();
     }
@@ -59,12 +65,6 @@ export default class World {
     }
 
     init() {
-        const renderer = new ChunkRenderer(
-            this.scene,
-            this.factory,
-            this.material,
-            this.chunkSize
-        );
         for (let cx = 0; cx < this.numChunks; cx++) {
             for (let cz = 0; cz < this.numChunks; cz++) {
                 const wx = cx * this.chunkSize;
@@ -88,7 +88,7 @@ export default class World {
 
 
 
-                renderer.render(chunk, cx, cz);
+                this.crenderer.render(chunk, cx, cz);
 
                 const key = `${cx},${cz}`;
                 this.world.set(key, chunk);
@@ -149,14 +149,7 @@ export default class World {
             );
             this.world.set(key, chunk);
 
-            const renderer = new ChunkRenderer(
-                this.scene,
-                this.factory,
-                this.material,
-                this.chunkSize
-            );
-
-            renderer.render(chunk, cx, cz);
+            this.crenderer.render(chunk, cx, cz);
         }
     }
 

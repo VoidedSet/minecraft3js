@@ -62,5 +62,6 @@ function animate() {
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
     renderer.render(scene, camera);
+
 }
 animate();

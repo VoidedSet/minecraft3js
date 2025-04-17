@@ -1,4 +1,3 @@
-import { OCEAN_STRUCTURE } from "../Structures";
 import { MOUNTAIN_STRUCTURE } from "../Structures";
 
 export class Chunk {
