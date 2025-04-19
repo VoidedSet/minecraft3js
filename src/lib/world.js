@@ -32,7 +32,8 @@ export default class World {
             this.scene,
             this.factory,
             this.material,
-            this.chunkSize
+            this.chunkSize,
+            this.world
         );
 
         this.init();
@@ -148,7 +149,6 @@ export default class World {
                 this.getBiome(wx, wz)
             );
             this.world.set(key, chunk);
-
             this.crenderer.render(chunk, cx, cz);
         }
     }

@@ -1,103 +1,157 @@
 import * as THREE from 'three';
-import { BlockDict } from '../Blocks';
+import { BlockDict, TransparentBlockIds } from '../Blocks';
 
 export class ChunkRenderer {
-    constructor(scene, geometryFactory, material, size) {
+    constructor(scene, geometryFactory, material, size, world) {
         this.scene = scene;
         this.factory = geometryFactory;
         this.material = material;
         this.size = size;
+        this.world = world
         this.maxHeight = 128;
         this.tMaterial = material.clone();
         this.tMaterial.transparent = true;
     }
 
     render(chunk, cx, cz) {
-
-        const maxId = Math.max(...Object.values(BlockDict).map(b => b.id));
-        const counts = new Array(maxId + 1).fill(0);
-
-        for (let x = 0; x < this.size; x++) {
-            for (let y = 0; y < this.maxHeight; y++) {
-                for (let z = 0; z < this.size; z++) {
-                    const b = chunk.blocks[x][y][z];
-                    if (b !== 0) counts[b]++;
-                }
-            }
-        }
-
+        const matrix = new THREE.Matrix4();
         const meshes = {};
 
-        for (const [id, count] of counts.entries()) {
-            if (count === 0) continue;
+        // ✅ Pre-allocate the blockBuffer array using max block id
+        const maxId = Math.max(...Object.values(BlockDict).map(b => b.id));
+        const blockBuffer = new Array(maxId + 1).fill(null).map(() => []);
 
-            const entry = Object.values(BlockDict).find(b => b.id === id);
-            if (!entry) continue;
+        const directions = [
+            { x: 0, y: 1, z: 0 },
+            { x: 0, y: -1, z: 0 },
+            { x: -1, y: 0, z: 0 },
+            { x: 1, y: 0, z: 0 },
+            { x: 0, y: 0, z: 1 },
+            { x: 0, y: 0, z: -1 },
+        ];
 
-            const type = entry.name.toLowerCase();
-            let mesh;
-
-            if (entry.isTransparent) {
-                mesh = new THREE.InstancedMesh(this.factory.create(type, chunk.biome), this.tMaterial, count);
-                mesh.renderOrder = 1;
-            } else {
-                mesh = new THREE.InstancedMesh(this.factory.create(type, chunk.biome), this.material, count);
-            }
-
-            this.scene.add(mesh);
-            meshes[id] = { mesh, index: 0, block: entry };
-        }
-
-        chunk.meshes = meshes;
-
-        const matrix = new THREE.Matrix4();
-
+        // 🔁 Collect visible blocks only
         for (let x = 0; x < this.size; x++) {
             for (let y = 0; y < this.maxHeight; y++) {
                 for (let z = 0; z < this.size; z++) {
                     const id = chunk.blocks[x][y][z];
-                    if (!meshes[id]) continue;
+                    if (id === 0) continue;
 
-                    const worldX = cx * this.size + x + 0.5;
-                    const worldY = y + 0.5;
-                    const worldZ = cz * this.size + z + 0.5;
+                    let visible = false;
 
-                    matrix.setPosition(worldX, worldY, worldZ);
-                    meshes[id].mesh.setMatrixAt(meshes[id].index++, matrix);
+                    for (const dir of directions) {
+                        const nx = x + dir.x;
+                        const ny = y + dir.y;
+                        const nz = z + dir.z;
+
+                        let neighborId;
+
+                        if (nx < 0 || nx >= this.size || ny < 0 || ny >= this.maxHeight || nz < 0 || nz >= this.size) {
+                            // Outside current chunk — check world
+                            const worldX = cx * this.size + nx;
+                            const worldY = ny;
+                            const worldZ = cz * this.size + nz;
+                            neighborId = this.globalBlockAt(worldX, worldY, worldZ);
+                            if (neighborId === -1) continue;
+                        } else {
+                            // Inside current chunk
+                            neighborId = chunk.blocks[nx][ny][nz];
+                        }
+
+                        if (TransparentBlockIds.has(neighborId)) {
+                            visible = true;
+                            break;
+                        }
+                    }
+
+
+                    if (visible) {
+                        blockBuffer[id].push({ x, y, z });
+                    }
                 }
             }
         }
 
-        for (const entry of Object.values(meshes)) {
-            entry.mesh.instanceMatrix.needsUpdate = true;
+        // 🧱 Create InstancedMeshes from the collected block positions
+        for (let id = 0; id < blockBuffer.length; id++) {
+            const list = blockBuffer[id];
+            if (!list || list.length === 0) continue;
+
+            const entry = Object.values(BlockDict).find(b => b.id === id);
+            if (!entry) {
+                console.warn(`Missing block entry in BlockDict for id: ${id}`);
+                continue;
+            }
+
+            const type = entry.name.toLowerCase();
+            const mesh = new THREE.InstancedMesh(
+                this.factory.create(type, chunk.biome),
+                entry.isTransparent ? this.tMaterial : this.material,
+                list.length
+            );
+
+            if (entry.isTransparent) mesh.renderOrder = 1;
+
+            this.scene.add(mesh);
+            meshes[id] = { mesh, index: 0 };
+        }
+
+        chunk.meshes = meshes;
+
+        // 🧩 Set instance matrices
+        for (let id = 0; id < blockBuffer.length; id++) {
+            const list = blockBuffer[id];
+            if (!list || !meshes[id]) continue;
+
+            const { mesh } = meshes[id];
+            for (const { x, y, z } of list) {
+                const worldX = cx * this.size + x + 0.5;
+                const worldY = y + 0.5;
+                const worldZ = cz * this.size + z + 0.5;
+
+                matrix.setPosition(worldX, worldY, worldZ);
+                mesh.setMatrixAt(meshes[id].index++, matrix);
+            }
+        }
+
+        // 🟢 Trigger GPU update
+        for (const { mesh } of Object.values(meshes)) {
+            mesh.instanceMatrix.needsUpdate = true;
         }
     }
 
     reRender(chunk, cx, cz) {
-        if (chunk.meshes) {
-            for (const key of Object.keys(chunk.meshes)) {
-                const { mesh } = chunk.meshes[key];
 
-                this.scene.remove(mesh);
-
-                if (mesh.geometry) {
-                    mesh.geometry.dispose();
-                }
-
-                if (mesh.material) {
-                    // In case of multi-material
-                    if (Array.isArray(mesh.material)) {
-                        mesh.material.forEach(m => m.dispose());
-                    } else {
-                        mesh.material.dispose();
-                    }
-                }
-
-                delete chunk.meshes[key]; // important to clear references
-            }
+        for (const { mesh } of Object.values(chunk.meshes)) {
+            this.scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
         }
 
         this.render(chunk, cx, cz);
     }
 
+    globalBlockAt(x, y, z) {
+        const chunkSize = this.size;
+        const cx = Math.floor(x / chunkSize);
+        const cz = Math.floor(z / chunkSize);
+        const key = `${cx},${cz}`;
+        const chunk = this.world.get(key); // assumes `world` is a Map or object
+
+        if (!chunk) return -1; // return air
+
+        if (Number.isNaN(cx) || Number.isNaN(cz)) {
+            console.warn('Bad chunk coordinates in globalBlockAt:', x, y, z);
+            return -1;
+        }
+
+
+        const lx = (Math.floor(x) % chunkSize + chunkSize) % chunkSize;
+        const ly = Math.floor(y);
+        const lz = (Math.floor(z) % chunkSize + chunkSize) % chunkSize;
+
+        if (ly < 0 || ly >= chunk.blocks[0].length) return 0;
+
+        return chunk.blocks[lx][ly][lz] ?? 0;
+    }
 }

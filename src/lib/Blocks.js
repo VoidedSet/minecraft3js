@@ -1,6 +1,6 @@
 // for blocks.png
 export const NonSolidBlockIds = new Set([0, 3, 10]);
-
+export const TransparentBlockIds = new Set([0, 3, 5, 10, 11, 16]);
 export const BlockDict = {
     air: {
         id: 0,

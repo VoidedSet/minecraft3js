@@ -26,8 +26,8 @@ export class PlayerMovement {
                 case 'KeyS': this.moveBackward = true; break;
                 case 'KeyD': this.moveRight = true; break;
                 case 'Space': this.wantsToJump = true; break;
-                case 'ShiftLeft': this.isDescending = true; break;
-                case 'ControlLeft': this.isSprinting = true; break;
+                // case 'ShiftLeft': this.isDescending = true; break;
+                case 'ShiftLeft': this.isSprinting = true; break;
                 case 'KeyQ': this.isFlying = !this.isFlying; break;
             }
         });
@@ -38,8 +38,8 @@ export class PlayerMovement {
                 case 'KeyA': this.moveLeft = false; break;
                 case 'KeyS': this.moveBackward = false; break;
                 case 'KeyD': this.moveRight = false; break;
-                case 'ShiftLeft': this.isDescending = false; break;
-                case 'ControlLeft': this.isSprinting = false; break;
+                // case 'ShiftLeft': this.isDescending = false; break;
+                case 'ShiftLeft': this.isSprinting = false; break;
             }
         });
     }

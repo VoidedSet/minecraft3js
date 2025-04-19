@@ -23,7 +23,7 @@ export class Chunk {
 
         const key = `${this.cx},${this.cz}`;
 
-        this._generateStructures(CHUNK);
+        // this._generateStructures(CHUNK);
 
         if (modifiedMap.has(key)) {
             const modifiedBlocks = modifiedMap.get(key);
@@ -117,6 +117,8 @@ export class Chunk {
                 }
             }
         }
+        this._generateStructures(CHUNK);
+
         return CHUNK;
     }
 

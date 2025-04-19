@@ -43,7 +43,7 @@ export class Environment {
     }
 
     update(delta, playerPosition) {
-        this.time += delta * 0.01;
+        this.time += delta * 0.002;
         this.time %= 1;
 
         const angle = this.time * Math.PI * 2;
@@ -75,7 +75,7 @@ export class Environment {
             lightFactor = 0;
         }
 
-        this.ambient.intensity = THREE.MathUtils.lerp(0.1, 0.6, lightFactor);
+        this.ambient.intensity = THREE.MathUtils.lerp(0.15, 0.6, lightFactor);
         this.sun.intensity = THREE.MathUtils.lerp(0.0, 2.0, lightFactor);
 
         // Fog color transition
@@ -87,8 +87,10 @@ export class Environment {
         const finalFog = baseFog.lerp(sunsetColor, sunsetFactor);
 
         this.scene.fog.color.copy(finalFog);
-        this.scene.fog.density = THREE.MathUtils.lerp(0.03, 0.007, lightFactor);
-        this.renderer.setClearColor(finalFog);
+        this.scene.fog.density = THREE.MathUtils.lerp(0.02, 0.009, lightFactor);
+        if (this.time === 0) {
+            this.renderer.setClearColor(0x00001f);
+        } else { this.renderer.setClearColor(finalFog); }
 
         // Moon visibility
         this.moon.material.opacity = this.time > 0.5 ? 1 - lightFactor : lightFactor;

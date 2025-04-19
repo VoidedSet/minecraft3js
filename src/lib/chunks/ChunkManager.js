@@ -7,7 +7,7 @@ export default class ChunkManager {
         this.world = world;
         this.modifiedMap = modifiedMap;
 
-        this.renderer = new ChunkRenderer(world.scene, world.factory, world.material, chunkSize);
+        this.renderer = new ChunkRenderer(world.scene, world.factory, world.material, chunkSize, world.world);
 
 
         this.lastDebugChunkX = null;
@@ -19,7 +19,7 @@ export default class ChunkManager {
         const chunkSize = world.chunkSize;
         const cx = Math.floor(pos.x / chunkSize);
         const cz = Math.floor(pos.z / chunkSize);
-        const radius = 6;
+        const radius = 8;
 
         if (cx !== this.lastDebugChunkX || cz !== this.lastDebugChunkZ) {
             this.lastDebugChunkX = cx;
@@ -39,23 +39,28 @@ export default class ChunkManager {
                     }
                 }
             }
-
             for (const [k, chunk] of world.world.entries()) {
                 if (!toKeep.has(k)) {
-                    for (const { mesh } of Object.values(chunk.meshes)) {
-                        world.scene.remove(mesh);
-                        if (mesh.geometry) mesh.geometry.dispose();
-                        if (mesh.material) {
-                            if (Array.isArray(mesh.material)) {
-                                mesh.material.forEach(mat => mat.dispose());
-                            } else {
-                                mesh.material.dispose();
+                    const meshesToDispose = Object.values(chunk.meshes);
+
+                    // Delay the unload to not overlap with chunk generation/render
+                    requestAnimationFrame(() => {
+                        for (const { mesh } of meshesToDispose) {
+                            world.scene.remove(mesh);
+                            if (mesh.geometry) mesh.geometry.dispose();
+                            if (mesh.material) {
+                                if (Array.isArray(mesh.material)) {
+                                    mesh.material.forEach(mat => mat.dispose());
+                                } else {
+                                    mesh.material.dispose();
+                                }
                             }
                         }
-                    }
+                    });
 
                     world.world.delete(k);
                 }
+
             }
 
             const wx = cx * chunkSize;
@@ -101,6 +106,13 @@ export default class ChunkManager {
         };
         chunk.updateBlock(lx, ly, lz, blockId);
         this.renderer.reRender(chunk, cx, cz);
+        for (const [dx, dz] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+            const neighborKey = `${cx + dx},${cz + dz}`;
+            const neighborChunk = this.world.world.get(neighborKey);
+            if (neighborChunk) {
+                this.renderer.reRender(neighborChunk, cx + dx, cz + dz);
+            }
+        }
 
         // console.log(this.modifiedMap)
 
