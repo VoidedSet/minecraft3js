@@ -1,7 +1,7 @@
 import { MOUNTAIN_STRUCTURE } from "../Structures";
 
 export class Chunk {
-    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap, biome) {
+    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap, biome, fluidMap) {
         this.cx = cx;
         this.cz = cz;
         this.size = size;
@@ -12,22 +12,17 @@ export class Chunk {
 
         this.biome = biome;
 
-        this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap);
+        this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap, fluidMap);
     }
 
 
-    _generate(chunkNoise, biomeCorners, modifiedMap) {
-        // Generate chunk from noise normally
-        const CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners);
-
+    _generate(chunkNoise, biomeCorners, modifiedMap, fluidMap) {
+        const CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners, fluidMap);
 
         const key = `${this.cx},${this.cz}`;
 
-        // this._generateStructures(CHUNK);
-
         if (modifiedMap.has(key)) {
             const modifiedBlocks = modifiedMap.get(key);
-            console.log(modifiedBlocks)
             this._applyModifications(CHUNK, modifiedBlocks);
         }
 
@@ -35,7 +30,7 @@ export class Chunk {
     }
 
 
-    _generateBaseChunk(chunkNoise, biomeCorners) {
+    _generateBaseChunk(chunkNoise, biomeCorners, fluidMap) {
 
         const CHUNK = Array(this.size).fill().map(() =>
             Array(this.maxHeight).fill().map(() =>
@@ -107,14 +102,24 @@ export class Chunk {
                 }
 
                 for (let y = 1; y <= 10; y++) {
-                    if (CHUNK[x][y][z] === 0 && y == 10) CHUNK[x][y][z] = 3;
-                    else if (CHUNK[x][y][z] === 1) {
-                        if (y < 7)
-                            CHUNK[x][y][z] = 7;
-                        else
-                            CHUNK[x][y][z] = 6;
+                    if (CHUNK[x][y][z] === 0 && y === 10) {
+                        // if (this.biome !== 'ocean') {
+                        //     const chunkKey = `${this.cx},${this.cz}`;
+                        //     const localKey = `${x},${y},${z}`;
+
+                        //     if (!fluidMap.has(chunkKey)) fluidMap.set(chunkKey, {});
+                        //     fluidMap.get(chunkKey)[localKey] = {
+                        //         blockId: 3,
+                        //         level: 8
+                        //     };
+                        // }
+                        CHUNK[x][y][z] = 3;
+                    } else if (CHUNK[x][y][z] === 1) {
+                        CHUNK[x][y][z] = (y < 7) ? 7 : 6;
                     }
                 }
+
+
             }
         }
         this._generateStructures(CHUNK);

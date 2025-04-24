@@ -41,7 +41,7 @@ const material = new THREE.MeshLambertMaterial({
 });
 
 const world = new World(scene, factory, material);
-const chunkManager = new ChunkManager(world.chunkSize, 16, world, world.modifiedMap);
+const chunkManager = new ChunkManager(world.chunkSize, 8, world, world.modifiedMap);
 
 const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
@@ -61,6 +61,8 @@ function animate() {
 
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
+
+    world.fluidSim.update(delta);
     renderer.render(scene, camera);
 
 }

@@ -11,6 +11,7 @@ export class ChunkRenderer {
         this.maxHeight = 128;
         this.tMaterial = material.clone();
         this.tMaterial.transparent = true;
+        this.fluidLevel = 0;
     }
 
     render(chunk, cx, cz) {
@@ -85,7 +86,9 @@ export class ChunkRenderer {
 
             const type = entry.name.toLowerCase();
             const mesh = new THREE.InstancedMesh(
-                this.factory.create(type, chunk.biome),
+                id === 3
+                    ? this.factory.create(type, chunk.biome, { level: this.fluidLevel })
+                    : this.factory.create(type, chunk.biome),
                 entry.isTransparent ? this.tMaterial : this.material,
                 list.length
             );

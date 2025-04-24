@@ -8,8 +8,6 @@ export default class ChunkManager {
         this.modifiedMap = modifiedMap;
 
         this.renderer = new ChunkRenderer(world.scene, world.factory, world.material, chunkSize, world.world);
-
-
         this.lastDebugChunkX = null;
         this.lastDebugChunkZ = null;
     }
@@ -19,7 +17,7 @@ export default class ChunkManager {
         const chunkSize = world.chunkSize;
         const cx = Math.floor(pos.x / chunkSize);
         const cz = Math.floor(pos.z / chunkSize);
-        const radius = 8;
+        const radius = this.loadRadius;
 
         if (cx !== this.lastDebugChunkX || cz !== this.lastDebugChunkZ) {
             this.lastDebugChunkX = cx;
@@ -40,6 +38,7 @@ export default class ChunkManager {
                 }
             }
             for (const [k, chunk] of world.world.entries()) {
+
                 if (!toKeep.has(k)) {
                     const meshesToDispose = Object.values(chunk.meshes);
 
@@ -57,10 +56,22 @@ export default class ChunkManager {
                             }
                         }
                     });
+                    // Save fluid data into modifiedMap before deleting
+                    if (world.fluidMap.has(k)) {
+                        const fluidChunk = world.fluidMap.get(k);
+                        if (!this.modifiedMap.has(k)) {
+                            this.modifiedMap.set(k, new Map());
+                        }
+                        const modChunk = this.modifiedMap.get(k);
 
+                        for (const posKey in fluidChunk) {
+                            if (!fluidChunk.hasOwnProperty(posKey)) continue;
+                            this.world.modifiedMap.get(k).set(posKey, fluidChunk[posKey].blockId);
+                        }
+                    }
+                    world.fluidMap.delete(k);
                     world.world.delete(k);
                 }
-
             }
 
             const wx = cx * chunkSize;
@@ -186,6 +197,17 @@ export default class ChunkManager {
 
         // console.log(this.world.modifiedMap)
         console.log(chunkKey, "\nblock coords", blockKey);
+
+        if (blockId === 3) {
+            const localKey = `${blockPos.x},${blockPos.y},${blockPos.z}`;
+
+            if (!this.world.fluidMap.has(chunkKey))
+                this.world.fluidMap.set(chunkKey, {});
+            this.world.fluidMap.get(chunkKey)[localKey] = {
+                blockId: 3,
+                level: 8
+            };
+        }
 
         // this.addRandomBlocksToChunk(this.world.modifiedMap, chunkKey)    
     }

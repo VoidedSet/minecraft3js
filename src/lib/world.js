@@ -1,6 +1,7 @@
 import { makeNoise2D } from "open-simplex-noise";
 import { Chunk } from "./chunks/Chunk";
 import { ChunkRenderer } from "./chunks/ChunkRender";
+import { FluidSim } from "./chunks/FluidSimulator";
 
 export default class World {
     constructor(scene, factory, material) {
@@ -19,6 +20,7 @@ export default class World {
         this.biomeMap = [];
         this.world = new Map();
         this.modifiedMap = new Map();
+        this.fluidMap = new Map(); // key will be coords obviuosly and the values will be water level 0 to 8
 
         this.biomeSettings = {
             ocean: { heightScale: 5, waterLevel: 12 },
@@ -33,7 +35,8 @@ export default class World {
             this.factory,
             this.material,
             this.chunkSize,
-            this.world
+            this.world,
+            this.fluidMap
         );
 
         this.init();
@@ -66,6 +69,10 @@ export default class World {
     }
 
     init() {
+        const fluid_map = new Map();
+
+        this.modifiedMap.set("fluid_map", fluid_map)
+
         for (let cx = 0; cx < this.numChunks; cx++) {
             for (let cz = 0; cz < this.numChunks; cz++) {
                 const wx = cx * this.chunkSize;
@@ -84,16 +91,17 @@ export default class World {
                     this.chunkHeightNoise,
                     { topLeft, topRight, bottomLeft, bottomRight }, // 4-corner biome data
                     this.modifiedMap,
-                    this.getBiome(wx, wz)
+                    this.getBiome(wx, wz),
+                    this.fluidMap
                 );
-
-
 
                 this.crenderer.render(chunk, cx, cz);
 
                 const key = `${cx},${cz}`;
                 this.world.set(key, chunk);
             }
+            this.fluidSim = new FluidSim(this.world, this.fluidMap, this.modifiedMap, this.crenderer)
+
         }
 
         document.addEventListener("keydown", (e) => {
@@ -146,7 +154,8 @@ export default class World {
                 this.chunkHeightNoise,
                 this.getBiomeCorners(cx, cz),
                 this.modifiedMap,
-                this.getBiome(wx, wz)
+                this.getBiome(wx, wz),
+                this.fluidMap
             );
             this.world.set(key, chunk);
             this.crenderer.render(chunk, cx, cz);

@@ -37,14 +37,17 @@ export class BlockGeometryFactory {
 
     }
 
-    create(type, biome = 'plains') {
+    create(type, biome = 'plains', options = {}) {
         let geo;
 
         if (type === "torch") {
             geo = new THREE.BoxGeometry(0.23, 0.8, 0.3);
             geo.translate(0, -0.2, 0);
-        } else if (type === "water") {
-            geo = new THREE.BoxGeometry(1, 0.79, 1);
+        } else if (type === 'water' || type === 'lava') {
+            const level = options.level ?? 8;
+            console.log(options.level, level)
+            const height = (level / 8) * 1.0; // full block = 1
+            geo = new THREE.BoxGeometry(1, height, 1);
         } else {
             geo = new THREE.BoxGeometry(1, 1, 1);
         }
