@@ -15,12 +15,12 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // or BasicShadowMap for performance
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 renderer.setClearColor(0x87ceeb);
 
-// Load Texture
+// load texture
 const loader = new THREE.TextureLoader();
 const texture = loader.load('../blocks.png');
 texture.magFilter = THREE.NearestFilter;
@@ -49,9 +49,6 @@ const clock = new THREE.Clock();
 world.safeSpawn(player);
 
 const sky = new Environment(scene, renderer);
-
-const light = new THREE.AmbientLight(0xffffff, 4)
-// scene.add(light)
 
 function animate() {
     requestAnimationFrame(animate);

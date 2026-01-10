@@ -18,7 +18,6 @@ export class ChunkRenderer {
         const matrix = new THREE.Matrix4();
         const meshes = {};
 
-        // ✅ Pre-allocate the blockBuffer array using max block id
         const maxId = Math.max(...Object.values(BlockDict).map(b => b.id));
         const blockBuffer = new Array(maxId + 1).fill(null).map(() => []);
 
@@ -31,7 +30,7 @@ export class ChunkRenderer {
             { x: 0, y: 0, z: -1 },
         ];
 
-        // 🔁 Collect visible blocks only
+        // visible blocks only
         for (let x = 0; x < this.size; x++) {
             for (let y = 0; y < this.maxHeight; y++) {
                 for (let z = 0; z < this.size; z++) {
@@ -73,7 +72,7 @@ export class ChunkRenderer {
             }
         }
 
-        // 🧱 Create InstancedMeshes from the collected block positions
+        //  InstancedMeshes from the collected block positions
         for (let id = 0; id < blockBuffer.length; id++) {
             const list = blockBuffer[id];
             if (!list || list.length === 0) continue;
@@ -86,9 +85,7 @@ export class ChunkRenderer {
 
             const type = entry.name.toLowerCase();
             const mesh = new THREE.InstancedMesh(
-                id === 3
-                    ? this.factory.create(type, chunk.biome, { level: this.fluidLevel })
-                    : this.factory.create(type, chunk.biome),
+                this.factory.create(type, chunk.biome),
                 entry.isTransparent ? this.tMaterial : this.material,
                 list.length
             );
@@ -101,7 +98,6 @@ export class ChunkRenderer {
 
         chunk.meshes = meshes;
 
-        // 🧩 Set instance matrices
         for (let id = 0; id < blockBuffer.length; id++) {
             const list = blockBuffer[id];
             if (!list || !meshes[id]) continue;
@@ -117,7 +113,6 @@ export class ChunkRenderer {
             }
         }
 
-        // 🟢 Trigger GPU update
         for (const { mesh } of Object.values(meshes)) {
             mesh.instanceMatrix.needsUpdate = true;
         }
@@ -139,7 +134,7 @@ export class ChunkRenderer {
         const cx = Math.floor(x / chunkSize);
         const cz = Math.floor(z / chunkSize);
         const key = `${cx},${cz}`;
-        const chunk = this.world.get(key); // assumes `world` is a Map or object
+        const chunk = this.world.get(key);
 
         if (!chunk) return -1; // return air
 

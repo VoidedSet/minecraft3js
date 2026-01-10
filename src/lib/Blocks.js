@@ -47,7 +47,7 @@ export const BlockDict = {
         uv: {
             top: [0, 15],
             side: [6, 2],
-            bottom: [6, 2]
+            bottom: [0, 15]
         }
     },
     oak_log: {
@@ -414,8 +414,4 @@ export class BlockAtlas {
             ...this.getFaceUV(side)    // Back
         ]);
     }
-}
-
-export default class Blocks {
-
 }

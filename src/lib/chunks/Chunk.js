@@ -130,7 +130,6 @@ export class Chunk {
     _generateStructures(CHUNK) {
 
         if (this.biome === "ocean") {
-            // 20% chance to spawn the structure
             const spawnChance = 0.01;
             if (Math.random() > spawnChance) return;
 

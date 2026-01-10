@@ -73,14 +73,14 @@ export class FluidSim {
                     const existing = existingChunk?.[newLocalKey];
                     if (existing && existing.level >= newLevel) continue;
 
-                    // ✅ Update fluidMap
+                    // update fluidMap
                     if (!this.fluidMap.has(newChunkKey)) this.fluidMap.set(newChunkKey, {});
                     this.fluidMap.get(newChunkKey)[newLocalKey] = { blockId, level: newLevel };
 
-                    // ✅ Update actual chunk
+                    // and then chunk
                     chunk.blocks[nlx][ny][nlz] = blockId;
 
-                    // ✅ Update modifiedMap
+                    // and then the modifiedMap
                     if (!this.modifiedMap.fluid_dat) this.modifiedMap.fluid_dat = {};
                     if (!this.modifiedMap.fluid_dat[newChunkKey]) this.modifiedMap.fluid_dat[newChunkKey] = {};
                     this.modifiedMap.fluid_dat[newChunkKey][newLocalKey] = {

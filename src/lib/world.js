@@ -50,7 +50,7 @@ export default class World {
 
         if (noiseVal < -0.4) return "ocean";
 
-        // SWAMP 10% CHANCE in transitional zones
+        // SWAMP 10% CHANCE
         if (noiseVal >= -0.4 && noiseVal < -0.1 && rand < 0.1) return "mushroom_fields";
 
         if (noiseVal < 0.3) return "plains";

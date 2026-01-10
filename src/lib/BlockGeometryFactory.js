@@ -46,7 +46,7 @@ export class BlockGeometryFactory {
         } else if (type === 'water' || type === 'lava') {
             const level = options.level ?? 8;
             console.log(options.level, level)
-            const height = (level / 8) * 1.0; // full block = 1
+            const height = (level / 8) * 1.0 - 0.2; // full block = 1
             geo = new THREE.BoxGeometry(1, height, 1);
         } else {
             geo = new THREE.BoxGeometry(1, 1, 1);
