@@ -1,3 +1,4 @@
+import { BlockDict } from "../Blocks";
 import { ChunkRenderer } from "./ChunkRender";
 
 export default class ChunkManager {
@@ -116,6 +117,20 @@ export default class ChunkManager {
             z: lz
         };
         chunk.updateBlock(lx, ly, lz, blockId);
+        // if (blockId !== 0) {
+        //     // Calculate coordinate below
+        //     const belowY = ly - 1;
+
+        //     // If it's valid and is Grass/Mycelium, kill it instantly
+        //     if (belowY >= 0) {
+        //         const blockBelow = chunk.blocks[lx][belowY][lz];
+        //         if (blockBelow === BlockDict.grass.id || blockBelow === BlockDict.mycelium.id) { // 1=Grass, 17=Mycelium
+        //             chunk.updateBlock(lx, belowY, lz, BlockDict.dirt.id)
+        //             // setTimeout(() => chunk.updateBlock(lx, belowY, lz, BlockDict.dirt.id), 1000); // 2=Dirt
+        //         }
+        //     }
+        // }
+
         this.renderer.reRender(chunk, cx, cz);
         for (const [dx, dz] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
             const neighborKey = `${cx + dx},${cz + dz}`;

@@ -97,7 +97,7 @@ export class FluidSim {
         }
 
         if (totalNewPlaced > 0) {
-            console.log(`[FluidSim] Placed ${totalNewPlaced} new fluid blocks.`);
+            // console.log(`[FluidSim] Placed ${totalNewPlaced} new fluid blocks.`);
         }
     }
 }

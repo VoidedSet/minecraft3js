@@ -6,6 +6,7 @@ import { Player } from './lib/player/Player.js';
 import ChunkManager from './lib/chunks/ChunkManager.js';
 import World from './lib/World.js';
 import { Environment } from './lib/Sky.js';
+import { TickManager } from './lib/TickManager.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -41,7 +42,7 @@ const material = new THREE.MeshLambertMaterial({
 });
 
 const world = new World(scene, factory, material);
-const chunkManager = new ChunkManager(world.chunkSize, 8, world, world.modifiedMap);
+const chunkManager = new ChunkManager(world.chunkSize, 1, world, world.modifiedMap);
 
 const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
@@ -49,6 +50,8 @@ const clock = new THREE.Clock();
 world.safeSpawn(player);
 
 const sky = new Environment(scene, renderer);
+
+const tickManager = new TickManager(chunkManager, world);
 
 function animate() {
     requestAnimationFrame(animate);
@@ -58,6 +61,8 @@ function animate() {
 
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
+
+    tickManager.update(delta);
 
     world.fluidSim.update(delta);
     renderer.render(scene, camera);

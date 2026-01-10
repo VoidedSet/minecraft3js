@@ -1,16 +1,12 @@
+// src/lib/BlockGeometryFactory.js
 import * as THREE from 'three';
 
 export class BlockGeometryFactory {
     constructor(atlas) {
         this.atlas = atlas;
 
-        // this.biomeColors = {
-        //     plains: [0.6, 0.8, 0.5],
-        //     mountains: [0.5, 0.6, 0.5],
-        //     ocean: [0.5, 0.5, 0.7],
-        //     swamp: [0.4, 0.5, 0.2],
-        //     default: [1, 1, 1],
-        // };
+        // Cache to store generated geometries
+        this.geometryCache = new Map();
 
         this.biomeColors = {
             swamps: [0x4c / 255, 0x76 / 255, 0x3c / 255],               // #4c763c
@@ -21,11 +17,11 @@ export class BlockGeometryFactory {
             stony_peaks: [0x9a / 255, 0xbe / 255, 0xb4 / 255],         // #9abe4b
             plains: [0x91 / 255, 0xbd / 255, 0x59 / 255],              // #91bd59
             ocean: [0x8e / 255, 0xb9 / 255, 0x71 / 255],               // #8eb971
-            hills: [0x8a / 255, 0xb6 / 255, 0x89 / 255],     // #8ab689
+            hills: [0x8a / 255, 0xb6 / 255, 0x89 / 255],               // #8ab689
             snowy_plains: [0x80 / 255, 0xb4 / 255, 0x97 / 255],        // #80b497
             snowy_beach: [0x83 / 255, 0xb5 / 255, 0x93 / 255],         // #83b593
             taiga: [0x86 / 255, 0xb7 / 255, 0x83 / 255],               // #86b783
-            mountains: [0x86 / 255, 0xb7 / 255, 0x8f / 255], // #86b78f
+            mountains: [0x86 / 255, 0xb7 / 255, 0x8f / 255],           // #86b78f
             meadow: [0x83 / 255, 0xbb / 255, 0x6d / 255],              // #83bb6d
             birch_forest: [0x88 / 255, 0xbb / 255, 0x67 / 255],        // #88bb67
             forest: [0x79 / 255, 0xc0 / 255, 0x5a / 255],              // #79c05a
@@ -34,18 +30,32 @@ export class BlockGeometryFactory {
             mushroom_fields: [0x55 / 255, 0xc9 / 255, 0x3f / 255],     // #55c93f
             default: [1, 1, 1],
         };
-
     }
 
     create(type, biome = 'plains', options = {}) {
+        const level = options.level ?? 8;
+
+        // Create a unique cache key
+        // We only append biome if the block actually uses biome colors
+        // We only append level if the block is a fluid
+        const isBiomeDependent = ['grass', 'leaves', 'oak_leaves', 'spruce_leaves', 'jungle_leaves', 'water'].includes(type);
+        const isLevelDependent = (type === 'water' || type === 'lava');
+
+        let cacheKey = type;
+        if (isBiomeDependent) cacheKey += `_${biome}`;
+        if (isLevelDependent) cacheKey += `_lvl${level}`;
+
+        // Check cache first!
+        if (this.geometryCache.has(cacheKey)) {
+            return this.geometryCache.get(cacheKey);
+        }
+
         let geo;
 
         if (type === "torch") {
             geo = new THREE.BoxGeometry(0.23, 0.8, 0.3);
             geo.translate(0, -0.2, 0);
         } else if (type === 'water' || type === 'lava') {
-            const level = options.level ?? 8;
-            console.log(options.level, level)
             const height = (level / 8) * 1.0 - 0.2; // full block = 1
             geo = new THREE.BoxGeometry(1, height, 1);
         } else {
@@ -59,7 +69,7 @@ export class BlockGeometryFactory {
         const colorsArray = [];
         let biomeColor = [1, 1, 1];
 
-        if (['grass', 'leaves', 'water'].includes(type)) {
+        if (isBiomeDependent) {
             biomeColor = this.biomeColors[biome] || this.biomeColors.default;
         }
 
@@ -69,7 +79,9 @@ export class BlockGeometryFactory {
 
         geo.setAttribute('color', new THREE.Float32BufferAttribute(colorsArray, 3));
 
+        // Save to cache before returning
+        this.geometryCache.set(cacheKey, geo);
+        console.log(this.geometryCache)
         return geo;
     }
-
 }

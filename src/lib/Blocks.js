@@ -1,6 +1,5 @@
-// for blocks.png
-export const NonSolidBlockIds = new Set([0, 3, 10]);
-export const TransparentBlockIds = new Set([0, 3, 5, 10, 11, 16]);
+// src/lib/Blocks.js
+
 export const BlockDict = {
     air: {
         id: 0,
@@ -234,148 +233,6 @@ export const BlockDict = {
     },
 };
 
-// export const BlockDict = {
-//     air: {
-//         id: 0,
-//         name: "Air",
-//         isSolid: false,
-//         isTransparent: true,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: null
-//     },
-//     grass: {
-//         id: 1,
-//         name: "Grass",
-//         isSolid: true,
-//         isTransparent: false,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [3, 10],
-//             side: [0, 10],
-//             bottom: [8, 4]
-//         }
-//     },
-//     dirt: {
-//         id: 2,
-//         name: "Dirt",
-//         isSolid: true,
-//         isTransparent: false,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [8, 4],
-//             side: [8, 4],
-//             bottom: [8, 4]
-//         }
-//     },
-//     water: {
-//         id: 3,
-//         name: "Water",
-//         isSolid: false,
-//         isTransparent: true,
-//         isAnimated: true,
-//         isLuminous: false,
-//         uv: {
-//             top: [3, 0],
-//             side: [22, 22],
-//             bottom: [22, 22]
-//         }
-//     },
-//     oak_log: {
-//         id: 4,
-//         name: "Oak Log",
-//         isSolid: true,
-//         isTransparent: false,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [3, 1],
-//             side: [2, 1],
-//             bottom: [3, 1]
-//         }
-//     },
-//     oak_leaves: {
-//         id: 5,
-//         name: "Oak Leaves",
-//         isSolid: true,
-//         isTransparent: true,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [4, 1],
-//             side: [4, 1],
-//             bottom: [4, 1]
-//         }
-//     },
-//     sand: {
-//         id: 6,
-//         name: "Sand",
-//         isSolid: true,
-//         isTransparent: false,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [0, 1],
-//             side: [0, 1],
-//             bottom: [0, 1]
-//         }
-//     },
-//     stone: {
-//         id: 7,
-//         name: "Stone",
-//         isSolid: true,
-//         isTransparent: false,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [3, 0],
-//             side: [3, 0],
-//             bottom: [3, 0]
-//         }
-//     },
-//     coal: {
-//         id: 8,
-//         name: "Coal",
-//         isSolid: true,
-//         isTransparent: false,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [4, 0],
-//             side: [4, 0],
-//             bottom: [4, 0]
-//         }
-//     },
-//     iron: {
-//         id: 9,
-//         name: "Iron",
-//         isSolid: true,
-//         isTransparent: false,
-//         isAnimated: false,
-//         isLuminous: false,
-//         uv: {
-//             top: [5, 0],
-//             side: [5, 0],
-//             bottom: [5, 0]
-//         }
-//     },
-//     torch: {
-//         id: 10,
-//         name: "Torch",
-//         isSolid: false,
-//         isTransparent: true,
-//         isAnimated: false,
-//         isLuminous: true,
-//         uv: {
-//             top: [1, 2],
-//             side: [0, 2],
-//             bottom: [1, 2]
-//         }
-//     }
-// };
-
 export class BlockAtlas {
     constructor(texture, tileSize = 16, atlasWidth = 256, atlasHeight = 256) {
         this.texture = texture;
@@ -415,3 +272,16 @@ export class BlockAtlas {
         ]);
     }
 }
+
+// Automatically derive these sets from the dictionary
+export const NonSolidBlockIds = new Set(
+    Object.values(BlockDict)
+        .filter(b => !b.isSolid)
+        .map(b => b.id)
+);
+
+export const TransparentBlockIds = new Set(
+    Object.values(BlockDict)
+        .filter(b => b.isTransparent)
+        .map(b => b.id)
+);
