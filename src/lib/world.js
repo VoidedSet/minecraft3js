@@ -21,6 +21,7 @@ export default class World {
         this.world = new Map();
         this.modifiedMap = new Map();
         this.fluidMap = new Map(); // key will be coords obviuosly and the values will be water level 0 to 8
+        this.dimension = "overworld";
 
         this.biomeSettings = {
             ocean: { heightScale: 5, waterLevel: 12 },
@@ -155,10 +156,40 @@ export default class World {
                 this.getBiomeCorners(cx, cz),
                 this.modifiedMap,
                 this.getBiome(wx, wz),
-                this.fluidMap
+                this.fluidMap,
+                this.dimension
             );
             this.world.set(key, chunk);
             this.crenderer.render(chunk, cx, cz);
+        }
+    }
+
+    setDimension(dimension) {
+        if (this.dimension === dimension) return;
+
+        console.log(`Switching dimension to: ${dimension}`);
+        this.dimension = dimension;
+
+        // 1. Clear all current chunks (visuals)
+        for (const chunk of this.world.values()) {
+            for (const { mesh } of Object.values(chunk.meshes)) {
+                this.scene.remove(mesh);
+                mesh.geometry.dispose();
+            }
+        }
+
+        // 2. Clear data maps so we don't load Overworld chunks in Nether
+        // Note: In a real game, you'd save 'overworld_chunks' to disk and load 'nether_chunks'
+        // For now, we will just clear the cache to regenerate them.
+        this.world.clear();
+
+        // 3. Change Atmosphere
+        if (dimension === 'nether') {
+            this.scene.background = new THREE.Color(0x200505); // Dark Red
+            this.scene.fog = new THREE.FogExp2(0x300505, 0.04); // Thick Red Fog
+        } else {
+            this.scene.background = new THREE.Color(0x87ceeb); // Sky Blue
+            this.scene.fog = new THREE.Fog(0x87ceeb, 10, 50); // Light fog
         }
     }
 

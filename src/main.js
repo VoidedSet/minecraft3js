@@ -69,3 +69,14 @@ function animate() {
 
 }
 animate();
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyN') {
+        const newDim = world.dimension === 'overworld' ? 'nether' : 'overworld';
+        world.setDimension(newDim);
+
+        // Reset player position so they don't suffocate in a wall
+        player.position.set(0, 80, 0);
+        player.velocity.set(0, 0, 0);
+    }
+});

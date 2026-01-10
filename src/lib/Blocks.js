@@ -231,6 +231,69 @@ export const BlockDict = {
             bottom: [2, 0]
         }
     },
+    netherrack: {
+        id: 18,
+        name: "Netherrack",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [10, 3],
+            side: [10, 3],
+            bottom: [10, 3]
+        }
+    },
+    glowstone: {
+        id: 19,
+        name: "Glowstone",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: true,
+        uv: {
+            top: [7, 2],
+            side: [7, 2],
+            bottom: [7, 2]
+        }
+    },
+    soul_sand: {
+        id: 20,
+        name: "Soul Sand",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: true,
+        uv: {
+            top: [8, 2],
+            side: [8, 2],
+            bottom: [8, 2]
+        }
+    }, lava: {
+        id: 21,
+        name: "Lava",
+        isSolid: false,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: true,
+        uv: {
+            top: [0, 14],
+            side: [0, 14],
+            bottom: [0, 14]
+        }
+    }, bedrock: {
+        id: 22,
+        name: "Bedrock",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [15, 13],
+            side: [15, 13],
+            bottom: [15, 13]
+        }
+    },
 };
 
 export class BlockAtlas {

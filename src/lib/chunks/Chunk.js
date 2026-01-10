@@ -1,7 +1,8 @@
+import { BlockDict } from "../Blocks";
 import { MOUNTAIN_STRUCTURE } from "../Structures";
 
 export class Chunk {
-    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap, biome, fluidMap) {
+    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap, biome, fluidMap, dimension = 'overworld') {
         this.cx = cx;
         this.cz = cz;
         this.size = size;
@@ -11,13 +12,18 @@ export class Chunk {
         this.chunkHeight = 0;
 
         this.biome = biome;
+        this.dimension = dimension;
 
         this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap, fluidMap);
     }
 
 
     _generate(chunkNoise, biomeCorners, modifiedMap, fluidMap) {
-        const CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners, fluidMap);
+        let CHUNK;
+        if (this.dimension === 'nether') {
+            CHUNK = this._generateNetherChunk(chunkNoise);
+        }
+        CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners, fluidMap);
 
         const key = `${this.cx},${this.cz}`;
 
@@ -29,6 +35,64 @@ export class Chunk {
         return CHUNK;
     }
 
+    _generateNetherChunk(chunkNoise) {
+        const CHUNK = Array(this.size).fill().map(() =>
+            Array(this.maxHeight).fill().map(() =>
+                Array(this.size).fill(0)
+            )
+        );
+
+        for (let x = 0; x < this.size; x++) {
+            for (let z = 0; z < this.size; z++) {
+                const wx = this.cx * this.size + x;
+                const wz = this.cz * this.size + z;
+
+                // 1. Noise for Terrain (Ground and Ceiling)
+                // We use 3D-ish noise logic or just simple 2D heightmap for floor + ceiling for now
+                // "Simplex" noise usually better here, but we'll use your 2D noise for a cave-like feel.
+
+                const baseFreq = 0.02;
+                const ceilingFreq = 0.03;
+
+                // Floor Noise
+                const floorNoise = chunkNoise(wx * baseFreq, wz * baseFreq);
+                const floorHeight = 30 + Math.floor(floorNoise * 15); // Hills from y=30 to y=45
+
+                // Ceiling Noise (Stalactites)
+                const ceilingNoise = chunkNoise(wx * ceilingFreq + 1000, wz * ceilingFreq + 1000); // Offset for variety
+                const ceilingHeight = 100 - Math.floor(ceilingNoise * 10); // Ceiling around y=90 to 100
+
+                // Lava Ocean Level
+                const lavaLevel = 32;
+
+                for (let y = 0; y < this.maxHeight; y++) {
+                    if (y === 0 || y === 127) {
+                        CHUNK[x][y][z] = BlockDict.bedrock.id;
+                        continue;
+                    }
+
+                    // Lava Ocean
+                    if (y < lavaLevel) {
+                        CHUNK[x][y][z] = BlockDict.lava.id;
+                        continue;
+                    }
+
+                    // Terrain Generation
+                    if (y <= floorHeight) {
+                        CHUNK[x][y][z] = BlockDict.netherrack.id;
+                    }
+                    else if (y >= ceilingHeight) {
+                        CHUNK[x][y][z] = BlockDict.netherrack.id;
+                    }
+
+                    if (y >= ceilingHeight && Math.random() < 0.02) {
+                        CHUNK[x][y][z] = BlockDict.glowstone.id;
+                    }
+                }
+            }
+        }
+        return CHUNK;
+    }
 
     _generateBaseChunk(chunkNoise, biomeCorners, fluidMap) {
 
@@ -74,23 +138,26 @@ export class Chunk {
                 for (let y = 0; y <= height; y++) {
                     let block = 0;
 
+                    if (y === 0)
+                        CHUNK[x][y][z] = BlockDict.bedrock.id;
+
                     if (y > this.chunkHeight)
                         this.chunkHeight = y;
 
                     if (y === height) {
                         if ((this.biome == 'mountains' || this.biome == 'hills') && y >= snowLine)
-                            block = 14; // snow
+                            block = BlockDict.snow.id;
                         else if (this.biome == 'mushroom_fields')
-                            block = 17;
+                            block = BlockDict.mycelium.id;
                         else
-                            block = 1; //grass
+                            block = BlockDict.grass.id;
                     }
                     else if (y >= height - stoneDepth) block = 2;
                     else {
-                        block = 7;
+                        block = BlockDict.stone.id;
                         const r = Math.random();
-                        if (y > 0 && y < 40 && r < 0.05) block = 8;
-                        if (y > 5 && y < 30 && r < 0.02) block = 9;
+                        if (y > 0 && y < 40 && r < 0.05) block = BlockDict.coal.id;
+                        if (y > 5 && y < 30 && r < 0.02) block = BlockDict.iron.id;
                     }
                     CHUNK[x][y][z] = block;
 
@@ -113,7 +180,7 @@ export class Chunk {
                         //         level: 8
                         //     };
                         // }
-                        CHUNK[x][y][z] = 3;
+                        CHUNK[x][y][z] = BlockDict.water.id;
                     } else if (CHUNK[x][y][z] === 1) {
                         CHUNK[x][y][z] = (y < 7) ? 7 : 6;
                     }
