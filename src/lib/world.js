@@ -2,6 +2,7 @@ import { makeNoise2D } from "open-simplex-noise";
 import { Chunk } from "./chunks/Chunk";
 import { ChunkRenderer } from "./chunks/ChunkRender";
 import { FluidSim } from "./chunks/FluidSimulator";
+import * as THREE from 'three';
 
 export default class World {
     constructor(scene, factory, material) {
@@ -21,7 +22,7 @@ export default class World {
         this.world = new Map();
         this.modifiedMap = new Map();
         this.fluidMap = new Map(); // key will be coords obviuosly and the values will be water level 0 to 8
-        this.dimension = "overworld";
+        this.dimension = "nether";
 
         this.biomeSettings = {
             ocean: { heightScale: 5, waterLevel: 12 },
@@ -93,7 +94,8 @@ export default class World {
                     { topLeft, topRight, bottomLeft, bottomRight }, // 4-corner biome data
                     this.modifiedMap,
                     this.getBiome(wx, wz),
-                    this.fluidMap
+                    this.fluidMap,
+                    this.dimension
                 );
 
                 this.crenderer.render(chunk, cx, cz);
@@ -184,13 +186,13 @@ export default class World {
         this.world.clear();
 
         // 3. Change Atmosphere
-        if (dimension === 'nether') {
-            this.scene.background = new THREE.Color(0x200505); // Dark Red
-            this.scene.fog = new THREE.FogExp2(0x300505, 0.04); // Thick Red Fog
-        } else {
-            this.scene.background = new THREE.Color(0x87ceeb); // Sky Blue
-            this.scene.fog = new THREE.Fog(0x87ceeb, 10, 50); // Light fog
-        }
+        // if (dimension === 'nether') {
+        //     this.scene.background = new THREE.Color(0x200505); // Dark Red
+        //     this.scene.fog = new THREE.FogExp2(0x300505, 0.03); // Thick Red Fog
+        // } else {
+        //     this.scene.background = new THREE.Color(0x87ceeb); // Sky Blue
+        //     this.scene.fog = new THREE.Fog(0x87ceeb, 10, 50); // Light fog
+        // }
     }
 
     safeSpawn(player) {

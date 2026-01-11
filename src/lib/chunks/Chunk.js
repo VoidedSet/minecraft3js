@@ -1,4 +1,4 @@
-import { BlockDict } from "../Blocks";
+import { BlockDict, NonSolidBlockIds } from "../Blocks";
 import { MOUNTAIN_STRUCTURE } from "../Structures";
 
 export class Chunk {
@@ -22,8 +22,8 @@ export class Chunk {
         let CHUNK;
         if (this.dimension === 'nether') {
             CHUNK = this._generateNetherChunk(chunkNoise);
-        }
-        CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners, fluidMap);
+        } else
+            CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners, fluidMap);
 
         const key = `${this.cx},${this.cz}`;
 
@@ -47,46 +47,137 @@ export class Chunk {
                 const wx = this.cx * this.size + x;
                 const wz = this.cz * this.size + z;
 
-                // 1. Noise for Terrain (Ground and Ceiling)
-                // We use 3D-ish noise logic or just simple 2D heightmap for floor + ceiling for now
-                // "Simplex" noise usually better here, but we'll use your 2D noise for a cave-like feel.
+                const floorNoise = chunkNoise(wx * 0.02, wz * 0.02);
+                const ceilingNoise = chunkNoise(wx * 0.03 + 1000, wz * 0.02 + 1000);
 
-                const baseFreq = 0.02;
-                const ceilingFreq = 0.03;
+                const pillarNoise = chunkNoise(wx * 0.03 + 1500, wz * 0.03 + 1500);
 
-                // Floor Noise
-                const floorNoise = chunkNoise(wx * baseFreq, wz * baseFreq);
-                const floorHeight = 30 + Math.floor(floorNoise * 15); // Hills from y=30 to y=45
+                const islandNoise = chunkNoise(wx * 0.03 - 500, wz * 0.03 - 500);
 
-                // Ceiling Noise (Stalactites)
-                const ceilingNoise = chunkNoise(wx * ceilingFreq + 1000, wz * ceilingFreq + 1000); // Offset for variety
-                const ceilingHeight = 100 - Math.floor(ceilingNoise * 10); // Ceiling around y=90 to 100
+                const patchNoise = chunkNoise(wx * 0.05 + 200, wz * 0.05 + 200);
 
-                // Lava Ocean Level
+
+                let floorH = 32 + Math.floor(floorNoise * 10);
+                let ceilingH = 70 - Math.floor(ceilingNoise * 10);
                 const lavaLevel = 32;
 
+                // applying pillars
+                if (pillarNoise > 0.2) {
+                    const intensity = (pillarNoise - 0.4) / 0.6;
+
+                    // for the hourglass shape
+                    const steepness = intensity * intensity * intensity * 5;
+
+                    floorH += steepness * 90;   // floor up to +90 blocks
+                    ceilingH -= steepness * 100; // ceiling down by -100 blocks
+                }
+
                 for (let y = 0; y < this.maxHeight; y++) {
+
                     if (y === 0 || y === 127) {
                         CHUNK[x][y][z] = BlockDict.bedrock.id;
                         continue;
                     }
 
-                    // Lava Ocean
                     if (y < lavaLevel) {
-                        CHUNK[x][y][z] = BlockDict.lava.id;
+                        CHUNK[x][y][z] = BlockDict.lava.id
                         continue;
                     }
 
-                    // Terrain Generation
-                    if (y <= floorHeight) {
-                        CHUNK[x][y][z] = BlockDict.netherrack.id;
-                    }
-                    else if (y >= ceilingHeight) {
-                        CHUNK[x][y][z] = BlockDict.netherrack.id;
+                    let block = 0;
+
+                    // floor generation 
+                    if (y <= floorH) {
+                        block = BlockDict.netherrack.id;
+
+                        if (y >= floorH - 3) {
+                            // coastline
+                            if (y <= lavaLevel + 2) {
+                                if (patchNoise > -0.1) block = BlockDict.soul_sand.id
+                                else block = BlockDict.gravel.id;
+                            }
+                            // patches (texturing) 
+                            else {
+                                if (patchNoise < 0.1 && patchNoise > -0.1) block = BlockDict.dirt.id;
+                                if (patchNoise > 0.5) block = BlockDict.soul_sand.id;
+                                if (patchNoise < -0.4 && CHUNK[x][y + 1][z] === BlockDict.air.id) block = BlockDict.mycelium.id;
+                                if (patchNoise === -0.5) block = BlockDict.gravel.id
+                            }
+                        }
                     }
 
-                    if (y >= ceilingHeight && Math.random() < 0.02) {
-                        CHUNK[x][y][z] = BlockDict.glowstone.id;
+                    // ceiling 
+                    else if (y >= ceilingH) {
+                        block = BlockDict.netherrack.id;
+
+                        if (y === Math.floor(ceilingH)) {
+
+                            // 1. GLOWSTONE CLUSTERS (New Feature)
+                            if (Math.random() < 0.005) { // 1.5% chance per ceiling block to start a cluster
+                                const clusterSize = 3 + Math.floor(Math.random() * 6); // 4 to 6 blocks
+                                const placedBlocks = [];
+
+                                // Start just below the ceiling
+                                if (y - 1 >= 0 && CHUNK[x][y - 1][z] === 0) {
+                                    CHUNK[x][y - 1][z] = BlockDict.glowstone.id;
+                                    placedBlocks.push({ bx: x, by: y - 1, bz: z });
+                                }
+
+                                // Grow the cluster
+                                for (let i = 0; i < clusterSize; i++) {
+                                    if (placedBlocks.length === 0) break;
+
+                                    // Pick a random block from the cluster to grow from (organic shape)
+                                    const origin = placedBlocks[Math.floor(Math.random() * placedBlocks.length)];
+
+                                    const dirs = [
+                                        [0, -1, 0], [0, -1, 0],
+                                        [1, 0, 0], [-1, 0, 0],
+                                        [0, 0, 1], [0, 0, -1],
+                                        [0, 1, 0]
+                                    ];
+                                    const dir = dirs[Math.floor(Math.random() * dirs.length)];
+
+                                    const nx = origin.bx + dir[0];
+                                    const ny = origin.by + dir[1];
+                                    const nz = origin.bz + dir[2];
+
+                                    if (nx >= 0 && nx < this.size && ny >= 0 && ny < this.maxHeight && nz >= 0 && nz < this.size) {
+                                        if (CHUNK[nx][ny][nz] === 0) {
+                                            CHUNK[nx][ny][nz] = BlockDict.glowstone.id;
+                                            placedBlocks.push({ bx: nx, by: ny, bz: nz });
+                                        }
+                                    }
+                                }
+                            }
+                            else if (Math.random() < 0.005) {
+                                block = BlockDict.lava.id;
+                            }
+                        }
+                    }
+
+                    // floating Islands
+                    else {
+                        const islandCenter = 60 + (islandNoise * -10);
+                        const islandThickness = 2;
+
+                        if (islandNoise > 0.2) {
+                            if (y >= islandCenter - islandThickness / 2 && y <= islandCenter + islandThickness / 2) {
+                                block = BlockDict.netherrack.id;
+                                if (patchNoise < 0.1 && patchNoise > -0.1) block = BlockDict.dirt.id;
+                                if (patchNoise > 0.5) block = BlockDict.soul_sand.id;
+                            }
+                        }
+                    }
+
+                    // Ores (Nether Quartz / Gold)
+                    if (block === BlockDict.netherrack.id) {
+                        const r = Math.random();
+                        if (r < 0.005 && CHUNK[x][y + 1][z] === BlockDict.air.id) block = BlockDict.nether_quartz_ore.id;
+                    }
+
+                    if (block !== 0) {
+                        CHUNK[x][y][z] = block;
                     }
                 }
             }
@@ -138,8 +229,10 @@ export class Chunk {
                 for (let y = 0; y <= height; y++) {
                     let block = 0;
 
-                    if (y === 0)
+                    if (y === 0) {
                         CHUNK[x][y][z] = BlockDict.bedrock.id;
+                        continue;
+                    }
 
                     if (y > this.chunkHeight)
                         this.chunkHeight = y;
@@ -181,8 +274,8 @@ export class Chunk {
                         //     };
                         // }
                         CHUNK[x][y][z] = BlockDict.water.id;
-                    } else if (CHUNK[x][y][z] === 1) {
-                        CHUNK[x][y][z] = (y < 7) ? 7 : 6;
+                    } else if (CHUNK[x][y][z] === BlockDict.grass.id) {
+                        CHUNK[x][y][z] = (y < 7) ? BlockDict.stone.id : BlockDict.sand.id;
                     }
                 }
 

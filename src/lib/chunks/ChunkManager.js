@@ -166,7 +166,7 @@ export default class ChunkManager {
         lz = (lz + chunkSize) % chunkSize;
 
         if (ly < 0 || ly >= chunk.blocks[0].length) {
-            console.warn(`Y index ${ly} out of bounds`);
+            // console.warn(`Y index ${ly} out of bounds`);
             return 0;
         }
 

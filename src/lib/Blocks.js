@@ -273,7 +273,7 @@ export const BlockDict = {
         id: 21,
         name: "Lava",
         isSolid: false,
-        isTransparent: false,
+        isTransparent: true,
         isAnimated: false,
         isLuminous: true,
         uv: {
@@ -292,6 +292,32 @@ export const BlockDict = {
             top: [15, 13],
             side: [15, 13],
             bottom: [15, 13]
+        }
+    },
+    nether_quartz_ore: {
+        id: 23,
+        name: "Nether Quartz Ore",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [9, 2],
+            side: [9, 2],
+            bottom: [9, 2]
+        }
+    },
+    gravel: {
+        id: 24,
+        name: "Gravel",
+        isSolid: true,
+        isTransparent: false,
+        isAnimated: false,
+        isLuminous: false,
+        uv: {
+            top: [10, 2],
+            side: [10, 2],
+            bottom: [10, 2]
         }
     },
 };
