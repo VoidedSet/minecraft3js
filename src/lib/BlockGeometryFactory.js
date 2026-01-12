@@ -6,11 +6,9 @@ export class BlockGeometryFactory {
     constructor(atlas) {
         this.atlas = atlas;
 
-        // Store animated geometries to update them later
-        // Structure: { type: 'lava', geo: geometry, currentOffset: 0, config: {} }
+        // { type: 'lava', geo: geometry, currentOffset: 0, config: {} }
         this.animatedGeometries = [];
 
-        // Cache to store generated geometries
         this.geometryCache = new Map();
 
         this.biomeColors = {
@@ -40,9 +38,6 @@ export class BlockGeometryFactory {
     create(type, biome = 'plains', options = {}) {
         const level = options.level ?? 8;
 
-        // Create a unique cache key
-        // We only append biome if the block actually uses biome colors
-        // We only append level if the block is a fluid
         const isBiomeDependent = ['grass', 'leaves', 'oak_leaves', 'spruce_leaves', 'jungle_leaves', 'water'].includes(type);
         const isLevelDependent = (type === 'water' || type === 'lava');
 
@@ -52,7 +47,6 @@ export class BlockGeometryFactory {
         if (isBiomeDependent) cacheKey += `_${biome}`;
         if (isLevelDependent) cacheKey += `_lvl${level}`;
 
-        // Check cache first!
         if (this.geometryCache.has(cacheKey)) {
             return this.geometryCache.get(cacheKey);
         }
@@ -69,7 +63,6 @@ export class BlockGeometryFactory {
             geo = new THREE.BoxGeometry(1, 1, 1);
         }
 
-        // Set UVs
         const uvs = this.atlas.getUVs(type);
         if (uvs) geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
 
@@ -95,21 +88,18 @@ export class BlockGeometryFactory {
                 currentOffset: 0,
                 config: blockDef.animation
             });
-            console.log(this.animatedGeometries)
         }
 
-        // Save to cache before returning
         this.geometryCache.set(cacheKey, geo);
+
+        // console.log(this.geometryCache)
         return geo;
     }
 
     update(delta) {
         for (const entry of this.animatedGeometries) {
-            // Smooth Scroll: increment offset by speed
             entry.currentOffset += entry.config.speed * delta;
 
-            // Loop: Reset if we exceed the strip length (assuming 16 frames for standard strips)
-            // You can adjust '16' to 'entry.config.totalFrames' if you added that to Blocks.js
             entry.currentOffset = entry.currentOffset % 16;
 
             const offsetX = entry.config.direction === 'x' ? entry.currentOffset : 0;

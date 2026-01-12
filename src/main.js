@@ -49,8 +49,8 @@ const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
 const sky = new Environment(scene, renderer);
 
-world.setDimension('nether');
-// sky.setDimension('nether');
+world.setDimension('overworld');
+sky.setDimension('overworld');
 world.safeSpawn(player);
 
 
@@ -86,7 +86,10 @@ window.addEventListener('keydown', (e) => {
         sky.setDimension(newDim);
 
         // 3. Restore Position (TP to same coords)
-        player.position.set(0, 50, 0);
+        if (newDim === "nether")
+            player.position.set(player.position.x / 8, player.position.y, player.position.z / 8);
+        else player.position.set(player.position.x * 8, player.position.y, player.position.z * 8)
+
         player.velocity.set(0, 0, 0);
     }
 });

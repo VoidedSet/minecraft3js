@@ -21,7 +21,7 @@ export default class World {
         this.biomeMap = [];
         this.world = new Map();
         this.modifiedMap = new Map();
-        this.dimension = "nether";
+        this.dimension = "overworld";
 
         this.biomeSettings = {
             ocean: { heightScale: 5, waterLevel: 12 },

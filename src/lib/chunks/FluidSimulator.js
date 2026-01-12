@@ -18,7 +18,7 @@ export class FluidSim {
 
     addFluidSource(x, y, z, blockId, direction = null) {
         const info = this.getLocalInfo(x, y, z);
-        console.log(info)
+
         if (info.chunk) {
             info.chunk.setFluid(info.lx, info.ly, info.lz, blockId, 8, direction);
             this.renderer.reRender(info.chunk, info.chunk.cx, info.chunk.cz);

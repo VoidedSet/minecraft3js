@@ -289,7 +289,7 @@ export class Chunk {
             if (Math.random() > spawnChance) return;
 
             const baseY = this.chunkHeight - 10;
-            console.log("mountain structure here")
+            // console.log("mountain structure here")
             // Get structure dimensions
             let maxX = 0, maxZ = 0;
             for (const coord of Object.keys(MOUNTAIN_STRUCTURE)) {
