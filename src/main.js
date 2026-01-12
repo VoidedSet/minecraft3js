@@ -19,7 +19,8 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-renderer.setClearColor(0x87ceeb);
+// renderer.setClearColor(0x87ceeb);
+renderer.setClearColor(0x200505);
 
 // load texture
 const loader = new THREE.TextureLoader();
@@ -42,14 +43,16 @@ const material = new THREE.MeshLambertMaterial({
 });
 
 const world = new World(scene, factory, material);
-const chunkManager = new ChunkManager(world.chunkSize, 1, world, world.modifiedMap);
+const chunkManager = new ChunkManager(world.chunkSize, 6, world, world.modifiedMap);
 
 const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
+const sky = new Environment(scene, renderer);
 
+world.setDimension('overworld');
+sky.setDimension('overworld');
 world.safeSpawn(player);
 
-const sky = new Environment(scene, renderer);
 
 const tickManager = new TickManager(chunkManager, world);
 
@@ -59,13 +62,34 @@ function animate() {
     delta = Math.min(delta, 0.05);
     sky.update(delta, player.position);
 
+    factory.update(delta);
+
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
 
-    tickManager.update(delta);
-
+    // tickManager.update(delta);
+    player.UI.updateDebugInfo(player, world);
     world.fluidSim.update(delta);
     renderer.render(scene, camera);
 
 }
 animate();
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyN') {
+        const currentPos = player.position.clone(); // 1. Save Position
+
+        const newDim = world.dimension === 'overworld' ? 'nether' : 'overworld';
+
+        // 2. Switch System Dimensions
+        world.setDimension(newDim);
+        sky.setDimension(newDim);
+
+        // 3. Restore Position (TP to same coords)
+        if (newDim === "nether")
+            player.position.set(player.position.x / 8, player.position.y, player.position.z / 8);
+        else player.position.set(player.position.x * 8, player.position.y, player.position.z * 8)
+
+        player.velocity.set(0, 0, 0);
+    }
+});

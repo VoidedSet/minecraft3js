@@ -36,7 +36,7 @@ export class Player {
 
         this.initAim();
 
-        console.log(this)
+        // console.log(this)
     }
 
     initAim() {

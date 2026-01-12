@@ -38,39 +38,25 @@ export default class ChunkManager {
                     }
                 }
             }
-            for (const [k, chunk] of world.world.entries()) {
 
+            // CLEAN UNLOAD LOGIC
+            for (const [k, chunk] of world.world.entries()) {
                 if (!toKeep.has(k)) {
                     const meshesToDispose = Object.values(chunk.meshes);
 
-                    // Delay the unload to not overlap with chunk generation/render
                     requestAnimationFrame(() => {
                         for (const { mesh } of meshesToDispose) {
                             world.scene.remove(mesh);
                             if (mesh.geometry) mesh.geometry.dispose();
                             if (mesh.material) {
-                                if (Array.isArray(mesh.material)) {
-                                    mesh.material.forEach(mat => mat.dispose());
-                                } else {
-                                    mesh.material.dispose();
-                                }
+                                if (Array.isArray(mesh.material)) mesh.material.forEach(mat => mat.dispose());
+                                else mesh.material.dispose();
                             }
                         }
                     });
-                    // Save fluid data into modifiedMap before deleting
-                    if (world.fluidMap.has(k)) {
-                        const fluidChunk = world.fluidMap.get(k);
-                        if (!this.modifiedMap.has(k)) {
-                            this.modifiedMap.set(k, new Map());
-                        }
-                        const modChunk = this.modifiedMap.get(k);
 
-                        for (const posKey in fluidChunk) {
-                            if (!fluidChunk.hasOwnProperty(posKey)) continue;
-                            this.world.modifiedMap.get(k).set(posKey, fluidChunk[posKey].blockId);
-                        }
-                    }
-                    world.fluidMap.delete(k);
+                    // We ONLY save solid block modifications, not fluids
+                    // Fluids are discarded as requested
                     world.world.delete(k);
                 }
             }
@@ -78,9 +64,8 @@ export default class ChunkManager {
             const wx = cx * chunkSize;
             const wz = cz * chunkSize;
             const biome = world.getBiome(wx, wz);
-            console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
+            // console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
 
-            // 🔥 Add this logging block here:
             console.log(
                 `Chunks loaded: ${world.world.size}`,
                 performance.memory
@@ -166,7 +151,7 @@ export default class ChunkManager {
         lz = (lz + chunkSize) % chunkSize;
 
         if (ly < 0 || ly >= chunk.blocks[0].length) {
-            console.warn(`Y index ${ly} out of bounds`);
+            // console.warn(`Y index ${ly} out of bounds`);
             return 0;
         }
 
@@ -199,7 +184,6 @@ export default class ChunkManager {
     setModifiedBlock(chunkKey, blockPos, blockId) {
         const blockKey = `${blockPos.x},${blockPos.y},${blockPos.z}`;
 
-
         if (!this.world.modifiedMap.has(chunkKey)) {
             this.world.modifiedMap.set(chunkKey, new Map());
         }
@@ -210,20 +194,24 @@ export default class ChunkManager {
 
         this.world.modifiedMap.get(chunkKey).set(blockKey, blockId);
 
-        // console.log(this.world.modifiedMap)
         console.log(chunkKey, "\nblock coords", blockKey);
 
-        if (blockId === 3) {
-            const localKey = `${blockPos.x},${blockPos.y},${blockPos.z}`;
+        // [FIXED] Coordinate Calculation logic
+        if (blockId === 3 || blockId === 21) { // 3=Water, 21=Lava
 
-            if (!this.world.fluidMap.has(chunkKey))
-                this.world.fluidMap.set(chunkKey, {});
-            this.world.fluidMap.get(chunkKey)[localKey] = {
-                blockId: 3,
-                level: 8
-            };
+            // 1. Parse Chunk Key "cx,cz"
+            const [cxStr, czStr] = chunkKey.split(',');
+            const cx = parseInt(cxStr);
+            const cz = parseInt(czStr);
+
+            // 2. Calculate Global Coordinates
+            // Global = (ChunkIndex * Size) + LocalIndex
+            const globalX = (cx * this.chunkSize) + blockPos.x;
+            const globalY = blockPos.y;
+            const globalZ = (cz * this.chunkSize) + blockPos.z;
+
+            // 3. Pass GLOBAL coordinates to FluidSim
+            this.world.fluidSim.addFluidSource(globalX, globalY, globalZ, blockId);
         }
-
-        // this.addRandomBlocksToChunk(this.world.modifiedMap, chunkKey)    
     }
 }

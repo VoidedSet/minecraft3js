@@ -1,11 +1,14 @@
 // src/lib/BlockGeometryFactory.js
 import * as THREE from 'three';
+import { BlockDict } from './Blocks';
 
 export class BlockGeometryFactory {
     constructor(atlas) {
         this.atlas = atlas;
 
-        // Cache to store generated geometries
+        // { type: 'lava', geo: geometry, currentOffset: 0, config: {} }
+        this.animatedGeometries = [];
+
         this.geometryCache = new Map();
 
         this.biomeColors = {
@@ -35,17 +38,15 @@ export class BlockGeometryFactory {
     create(type, biome = 'plains', options = {}) {
         const level = options.level ?? 8;
 
-        // Create a unique cache key
-        // We only append biome if the block actually uses biome colors
-        // We only append level if the block is a fluid
         const isBiomeDependent = ['grass', 'leaves', 'oak_leaves', 'spruce_leaves', 'jungle_leaves', 'water'].includes(type);
         const isLevelDependent = (type === 'water' || type === 'lava');
+
+        const isAnimated = (type === 'water' || type === 'lava');
 
         let cacheKey = type;
         if (isBiomeDependent) cacheKey += `_${biome}`;
         if (isLevelDependent) cacheKey += `_lvl${level}`;
 
-        // Check cache first!
         if (this.geometryCache.has(cacheKey)) {
             return this.geometryCache.get(cacheKey);
         }
@@ -55,14 +56,13 @@ export class BlockGeometryFactory {
         if (type === "torch") {
             geo = new THREE.BoxGeometry(0.23, 0.8, 0.3);
             geo.translate(0, -0.2, 0);
-        } else if (type === 'water' || type === 'lava') {
+        } else if (type === 'water') {
             const height = (level / 8) * 1.0 - 0.2; // full block = 1
             geo = new THREE.BoxGeometry(1, height, 1);
         } else {
             geo = new THREE.BoxGeometry(1, 1, 1);
         }
 
-        // Set UVs
         const uvs = this.atlas.getUVs(type);
         if (uvs) geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
 
@@ -79,9 +79,35 @@ export class BlockGeometryFactory {
 
         geo.setAttribute('color', new THREE.Float32BufferAttribute(colorsArray, 3));
 
-        // Save to cache before returning
+        const blockDef = Object.values(BlockDict).find(b => b.name.toLowerCase() === type);
+
+        if (blockDef && blockDef.animation && !this.animatedGeometries.find(entry => entry.geo === geo)) {
+            this.animatedGeometries.push({
+                type: type,
+                geo: geo,
+                currentOffset: 0,
+                config: blockDef.animation
+            });
+        }
+
         this.geometryCache.set(cacheKey, geo);
-        console.log(this.geometryCache)
+
+        // console.log(this.geometryCache)
         return geo;
+    }
+
+    update(delta) {
+        for (const entry of this.animatedGeometries) {
+            entry.currentOffset += entry.config.speed * delta;
+
+            entry.currentOffset = entry.currentOffset % 16;
+
+            const offsetX = entry.config.direction === 'x' ? entry.currentOffset : 0;
+            const offsetY = entry.config.direction === 'y' ? entry.currentOffset : 0;
+
+            const newUVs = this.atlas.getUVs(entry.type, offsetX, offsetY);
+            entry.geo.setAttribute('uv', new THREE.BufferAttribute(newUVs, 2));
+            entry.geo.attributes.uv.needsUpdate = true;
+        }
     }
 }

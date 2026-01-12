@@ -2,6 +2,7 @@ import { makeNoise2D } from "open-simplex-noise";
 import { Chunk } from "./chunks/Chunk";
 import { ChunkRenderer } from "./chunks/ChunkRender";
 import { FluidSim } from "./chunks/FluidSimulator";
+import * as THREE from 'three';
 
 export default class World {
     constructor(scene, factory, material) {
@@ -20,7 +21,7 @@ export default class World {
         this.biomeMap = [];
         this.world = new Map();
         this.modifiedMap = new Map();
-        this.fluidMap = new Map(); // key will be coords obviuosly and the values will be water level 0 to 8
+        this.dimension = "overworld";
 
         this.biomeSettings = {
             ocean: { heightScale: 5, waterLevel: 12 },
@@ -35,8 +36,7 @@ export default class World {
             this.factory,
             this.material,
             this.chunkSize,
-            this.world,
-            this.fluidMap
+            this.world
         );
 
         this.init();
@@ -69,10 +69,7 @@ export default class World {
     }
 
     init() {
-        const fluid_map = new Map();
-
-        this.modifiedMap.set("fluid_map", fluid_map)
-
+        this.fluidSim = new FluidSim(this.world, this.crenderer);
         for (let cx = 0; cx < this.numChunks; cx++) {
             for (let cz = 0; cz < this.numChunks; cz++) {
                 const wx = cx * this.chunkSize;
@@ -92,7 +89,8 @@ export default class World {
                     { topLeft, topRight, bottomLeft, bottomRight }, // 4-corner biome data
                     this.modifiedMap,
                     this.getBiome(wx, wz),
-                    this.fluidMap
+                    this.dimension,
+                    this.fluidSim
                 );
 
                 this.crenderer.render(chunk, cx, cz);
@@ -100,7 +98,6 @@ export default class World {
                 const key = `${cx},${cz}`;
                 this.world.set(key, chunk);
             }
-            this.fluidSim = new FluidSim(this.world, this.fluidMap, this.modifiedMap, this.crenderer)
 
         }
 
@@ -155,11 +152,42 @@ export default class World {
                 this.getBiomeCorners(cx, cz),
                 this.modifiedMap,
                 this.getBiome(wx, wz),
-                this.fluidMap
+                this.dimension,
+                this.fluidSim
             );
+
             this.world.set(key, chunk);
             this.crenderer.render(chunk, cx, cz);
         }
+    }
+
+    setDimension(dimension) {
+        if (this.dimension === dimension) return;
+
+        console.log(`Switching dimension to: ${dimension}`);
+        this.dimension = dimension;
+
+        // 1. Clear all current chunks (visuals)
+        for (const chunk of this.world.values()) {
+            for (const { mesh } of Object.values(chunk.meshes)) {
+                this.scene.remove(mesh);
+                mesh.geometry.dispose();
+            }
+        }
+
+        // 2. Clear data maps so we don't load Overworld chunks in Nether
+        // Note: In a real game, you'd save 'overworld_chunks' to disk and load 'nether_chunks'
+        // For now, we will just clear the cache to regenerate them.
+        this.world.clear();
+
+        // 3. Change Atmosphere
+        // if (dimension === 'nether') {
+        //     this.scene.background = new THREE.Color(0x200505); // Dark Red
+        //     this.scene.fog = new THREE.FogExp2(0x300505, 0.03); // Thick Red Fog
+        // } else {
+        //     this.scene.background = new THREE.Color(0x87ceeb); // Sky Blue
+        //     this.scene.fog = new THREE.Fog(0x87ceeb, 10, 50); // Light fog
+        // }
     }
 
     safeSpawn(player) {
@@ -192,6 +220,5 @@ export default class World {
 
         URL.revokeObjectURL(url);
     }
-
 
 }
