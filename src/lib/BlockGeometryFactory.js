@@ -1,9 +1,14 @@
 // src/lib/BlockGeometryFactory.js
 import * as THREE from 'three';
+import { BlockDict } from './Blocks';
 
 export class BlockGeometryFactory {
     constructor(atlas) {
         this.atlas = atlas;
+
+        // Store animated geometries to update them later
+        // Structure: { type: 'lava', geo: geometry, currentOffset: 0, config: {} }
+        this.animatedGeometries = [];
 
         // Cache to store generated geometries
         this.geometryCache = new Map();
@@ -41,6 +46,8 @@ export class BlockGeometryFactory {
         const isBiomeDependent = ['grass', 'leaves', 'oak_leaves', 'spruce_leaves', 'jungle_leaves', 'water'].includes(type);
         const isLevelDependent = (type === 'water' || type === 'lava');
 
+        const isAnimated = (type === 'water' || type === 'lava');
+
         let cacheKey = type;
         if (isBiomeDependent) cacheKey += `_${biome}`;
         if (isLevelDependent) cacheKey += `_lvl${level}`;
@@ -55,7 +62,7 @@ export class BlockGeometryFactory {
         if (type === "torch") {
             geo = new THREE.BoxGeometry(0.23, 0.8, 0.3);
             geo.translate(0, -0.2, 0);
-        } else if (type === 'water' || type === 'lava') {
+        } else if (type === 'water') {
             const height = (level / 8) * 1.0 - 0.2; // full block = 1
             geo = new THREE.BoxGeometry(1, height, 1);
         } else {
@@ -79,9 +86,38 @@ export class BlockGeometryFactory {
 
         geo.setAttribute('color', new THREE.Float32BufferAttribute(colorsArray, 3));
 
+        const blockDef = Object.values(BlockDict).find(b => b.name.toLowerCase() === type);
+
+        if (blockDef && blockDef.animation && !this.animatedGeometries.find(entry => entry.geo === geo)) {
+            this.animatedGeometries.push({
+                type: type,
+                geo: geo,
+                currentOffset: 0,
+                config: blockDef.animation
+            });
+            console.log(this.animatedGeometries)
+        }
+
         // Save to cache before returning
         this.geometryCache.set(cacheKey, geo);
-        console.log(this.geometryCache)
         return geo;
+    }
+
+    update(delta) {
+        for (const entry of this.animatedGeometries) {
+            // Smooth Scroll: increment offset by speed
+            entry.currentOffset += entry.config.speed * delta;
+
+            // Loop: Reset if we exceed the strip length (assuming 16 frames for standard strips)
+            // You can adjust '16' to 'entry.config.totalFrames' if you added that to Blocks.js
+            entry.currentOffset = entry.currentOffset % 16;
+
+            const offsetX = entry.config.direction === 'x' ? entry.currentOffset : 0;
+            const offsetY = entry.config.direction === 'y' ? entry.currentOffset : 0;
+
+            const newUVs = this.atlas.getUVs(entry.type, offsetX, offsetY);
+            entry.geo.setAttribute('uv', new THREE.BufferAttribute(newUVs, 2));
+            entry.geo.attributes.uv.needsUpdate = true;
+        }
     }
 }

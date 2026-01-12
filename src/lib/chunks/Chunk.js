@@ -2,7 +2,7 @@ import { BlockDict, NonSolidBlockIds } from "../Blocks";
 import { MOUNTAIN_STRUCTURE } from "../Structures";
 
 export class Chunk {
-    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap, biome, fluidMap, dimension = 'overworld') {
+    constructor(cx, cz, size, chunkNoise, biomeCorners, modifiedMap, biome, dimension = 'overworld', fluidSim) {
         this.cx = cx;
         this.cz = cz;
         this.size = size;
@@ -10,20 +10,21 @@ export class Chunk {
         this.meshes;
         this.needsUpdate = false;
         this.chunkHeight = 0;
-
+        this.fluidLevels = new Map();
         this.biome = biome;
         this.dimension = dimension;
+        this.fluidSim = fluidSim;
 
-        this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap, fluidMap);
+        this.blocks = this._generate(chunkNoise, biomeCorners, modifiedMap);
     }
 
 
-    _generate(chunkNoise, biomeCorners, modifiedMap, fluidMap) {
+    _generate(chunkNoise, biomeCorners, modifiedMap) {
         let CHUNK;
         if (this.dimension === 'nether') {
             CHUNK = this._generateNetherChunk(chunkNoise);
         } else
-            CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners, fluidMap);
+            CHUNK = this._generateBaseChunk(chunkNoise, biomeCorners);
 
         const key = `${this.cx},${this.cz}`;
 
@@ -150,8 +151,12 @@ export class Chunk {
                                     }
                                 }
                             }
-                            else if (Math.random() < 0.005) {
-                                block = BlockDict.lava.id;
+                            else if (Math.random() < 0.0002) {
+                                this.fluidLevels.set(`${x},${y},${z}`, {
+                                    level: 8,
+                                    blockId: BlockDict.lava.id,
+                                    direction: null
+                                });
                             }
                         }
                     }
@@ -263,16 +268,6 @@ export class Chunk {
 
                 for (let y = 1; y <= 10; y++) {
                     if (CHUNK[x][y][z] === 0 && y === 10) {
-                        // if (this.biome !== 'ocean') {
-                        //     const chunkKey = `${this.cx},${this.cz}`;
-                        //     const localKey = `${x},${y},${z}`;
-
-                        //     if (!fluidMap.has(chunkKey)) fluidMap.set(chunkKey, {});
-                        //     fluidMap.get(chunkKey)[localKey] = {
-                        //         blockId: 3,
-                        //         level: 8
-                        //     };
-                        // }
                         CHUNK[x][y][z] = BlockDict.water.id;
                     } else if (CHUNK[x][y][z] === BlockDict.grass.id) {
                         CHUNK[x][y][z] = (y < 7) ? BlockDict.stone.id : BlockDict.sand.id;
@@ -335,6 +330,13 @@ export class Chunk {
                 y >= 0 && y < this.maxHeight &&
                 z >= 0 && z < this.size
             ) {
+                if (blockId === BlockDict.lava.id || blockId === BlockDict.water.id)
+                    this.fluidLevels.set(`${x},${y},${z}`, {
+                        level: 8,
+                        blockId: blockId,
+                        direction: null
+                    });
+
                 CHUNK[x][y][z] = blockId === -1 ? 0 : blockId;
             }
         }
@@ -431,6 +433,26 @@ export class Chunk {
             }
         }
         return false;
+    }
+
+    setFluid(x, y, z, id, level = 8, direction = null) {
+        if (x < 0 || x >= this.size || z < 0 || z >= this.size || y < 0 || y >= this.maxHeight) return;
+
+        // 1. Update Visual Block
+        this.blocks[x][y][z] = id;
+
+        // 2. Update Fluid Data
+        const key = `${x},${y},${z}`;
+        if (id === 0) {
+            this.fluidLevels.delete(key);
+        } else if (id === 3 || id === 21) {
+            this.fluidLevels.set(key, { level, blockId: id, direction });
+        }
+    }
+
+    getFluidLevel(x, y, z) {
+        const data = this.fluidLevels.get(`${x},${y},${z}`);
+        return data ? data.level : 0;
     }
 
 }

@@ -21,7 +21,6 @@ export default class World {
         this.biomeMap = [];
         this.world = new Map();
         this.modifiedMap = new Map();
-        this.fluidMap = new Map(); // key will be coords obviuosly and the values will be water level 0 to 8
         this.dimension = "nether";
 
         this.biomeSettings = {
@@ -37,8 +36,7 @@ export default class World {
             this.factory,
             this.material,
             this.chunkSize,
-            this.world,
-            this.fluidMap
+            this.world
         );
 
         this.init();
@@ -71,10 +69,7 @@ export default class World {
     }
 
     init() {
-        const fluid_map = new Map();
-
-        this.modifiedMap.set("fluid_map", fluid_map)
-
+        this.fluidSim = new FluidSim(this.world, this.crenderer);
         for (let cx = 0; cx < this.numChunks; cx++) {
             for (let cz = 0; cz < this.numChunks; cz++) {
                 const wx = cx * this.chunkSize;
@@ -94,8 +89,8 @@ export default class World {
                     { topLeft, topRight, bottomLeft, bottomRight }, // 4-corner biome data
                     this.modifiedMap,
                     this.getBiome(wx, wz),
-                    this.fluidMap,
-                    this.dimension
+                    this.dimension,
+                    this.fluidSim
                 );
 
                 this.crenderer.render(chunk, cx, cz);
@@ -103,7 +98,6 @@ export default class World {
                 const key = `${cx},${cz}`;
                 this.world.set(key, chunk);
             }
-            this.fluidSim = new FluidSim(this.world, this.fluidMap, this.modifiedMap, this.crenderer)
 
         }
 
@@ -158,9 +152,10 @@ export default class World {
                 this.getBiomeCorners(cx, cz),
                 this.modifiedMap,
                 this.getBiome(wx, wz),
-                this.fluidMap,
-                this.dimension
+                this.dimension,
+                this.fluidSim
             );
+
             this.world.set(key, chunk);
             this.crenderer.render(chunk, cx, cz);
         }
@@ -225,6 +220,5 @@ export default class World {
 
         URL.revokeObjectURL(url);
     }
-
 
 }

@@ -42,10 +42,14 @@ export const BlockDict = {
         isSolid: false,
         isTransparent: true,
         isAnimated: true,
-        isLuminous: false,
+        isLuminous: false, animation: {
+            type: 'scroll',      // How many frames in your strip?
+            speed: 0.2,          // Seconds per frame (lower = faster)
+            direction: 'x'       // 'x' for horizontal strip, 'y' for vertical
+        },
         uv: {
             top: [0, 15],
-            side: [6, 2],
+            side: [0, 15],
             bottom: [0, 15]
         }
     },
@@ -273,9 +277,14 @@ export const BlockDict = {
         id: 21,
         name: "Lava",
         isSolid: false,
-        isTransparent: true,
+        isTransparent: false,
         isAnimated: false,
         isLuminous: true,
+        animation: {
+            type: 'scroll',    // New type: 'scroll' vs 'frame'
+            speed: 0.1,        // UV units per second (adjust to control flow speed)
+            direction: 'x'     // 'x' for horizontal flow
+        },
         uv: {
             top: [0, 14],
             side: [0, 14],
@@ -358,6 +367,63 @@ export class BlockAtlas {
             ...this.getFaceUV(bottom), // Right
             ...this.getFaceUV(side),   // Front
             ...this.getFaceUV(side)    // Back
+        ]);
+    }
+
+    getRotatedFaceUV([x, y]) {
+        const sx = this.UV_SCALE_X;
+        const sy = this.UV_SCALE_Y;
+        const eps = 0.001;
+
+        const x1 = x * sx + eps;
+        const y1 = y * sy + eps;
+        const x2 = (x + 1) * sx - eps;
+        const y2 = (y + 1) * sy - eps;
+
+        // Map Texture U (Horizontal) to Face V (Vertical)
+        // Texture Left (Low U) -> Face Bottom (Low V)
+        // Texture Right (High U) -> Face Top (High V)
+        return [
+            x2, y1,  // Face TR gets Texture BR
+            x2, y2, // Face TL gets Texture TR
+            x1, y1, // Face BR gets Texture BL
+            x1, y2, // Face BL gets Texture TL
+        ];
+    }
+
+    getUVs(type, offsetX = 0, offsetY = 0) {
+        const block = Object.values(BlockDict).find(b => b.name.toLowerCase() === type.toLowerCase());
+        if (!block || !block.uv) throw new Error(`Unknown or UV-less block type: ${type}`);
+
+        const { top, side, bottom } = block.uv;
+
+        // Apply scroll offset
+        const applyOffset = (faceUV) => [faceUV[0] + offsetX, faceUV[1] + offsetY];
+
+        // [SPECIAL HANDLING FOR LAVA]
+        if (type.toLowerCase() === 'lava' || type.toLowerCase() === 'water') {
+            const sideRotated = this.getRotatedFaceUV(applyOffset(side));
+            const topStandard = this.getFaceUV(applyOffset(top));
+            const bottomStandard = this.getFaceUV(applyOffset(bottom));
+
+            return new Float32Array([
+                ...sideRotated,     // Front (Rotated)
+                ...sideRotated,     // Back (Rotated)
+                ...topStandard,     // Top (Standard flow)
+                ...bottomStandard,  // Bottom (Standard flow)
+                ...sideRotated,     // Left (Rotated)
+                ...sideRotated      // Right (Rotated)
+            ]);
+        }
+
+        // Standard behavior for all other blocks
+        return new Float32Array([
+            ...this.getFaceUV(applyOffset(side)),   // Front
+            ...this.getFaceUV(applyOffset(side)),   // Back
+            ...this.getFaceUV(applyOffset(top)),    // Top
+            ...this.getFaceUV(applyOffset(bottom)), // Bottom
+            ...this.getFaceUV(applyOffset(side)),   // Left
+            ...this.getFaceUV(applyOffset(side))    // Right
         ]);
     }
 }

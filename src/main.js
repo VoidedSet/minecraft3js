@@ -47,10 +47,12 @@ const chunkManager = new ChunkManager(world.chunkSize, 6, world, world.modifiedM
 
 const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
+const sky = new Environment(scene, renderer);
 
+world.setDimension('nether');
+// sky.setDimension('nether');
 world.safeSpawn(player);
 
-const sky = new Environment(scene, renderer);
 
 const tickManager = new TickManager(chunkManager, world);
 
@@ -60,11 +62,13 @@ function animate() {
     delta = Math.min(delta, 0.05);
     sky.update(delta, player.position);
 
+    factory.update(delta);
+
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
 
     // tickManager.update(delta);
-
+    player.UI.updateDebugInfo(player, world);
     world.fluidSim.update(delta);
     renderer.render(scene, camera);
 
@@ -73,11 +77,16 @@ animate();
 
 window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyN') {
-        const newDim = world.dimension === 'overworld' ? 'nether' : 'overworld';
-        world.setDimension(newDim);
+        const currentPos = player.position.clone(); // 1. Save Position
 
-        // Reset player position so they don't suffocate in a wall
-        player.position.set(0, 80, 0);
+        const newDim = world.dimension === 'overworld' ? 'nether' : 'overworld';
+
+        // 2. Switch System Dimensions
+        world.setDimension(newDim);
+        sky.setDimension(newDim);
+
+        // 3. Restore Position (TP to same coords)
+        player.position.set(0, 50, 0);
         player.velocity.set(0, 0, 0);
     }
 });

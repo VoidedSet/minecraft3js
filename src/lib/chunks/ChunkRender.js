@@ -12,6 +12,11 @@ export class ChunkRenderer {
         this.tMaterial = material.clone();
         this.tMaterial.transparent = true;
         this.fluidLevel = 0;
+
+        this.lumMaterial = new THREE.MeshBasicMaterial({
+            map: material.map,
+            vertexColors: true
+        });
     }
 
     render(chunk, cx, cz) {
@@ -83,10 +88,16 @@ export class ChunkRenderer {
                 continue;
             }
 
-            const type = entry.name.toLowerCase();
+            let selectedMat = this.material;
+            if (entry.isLuminous) {
+                selectedMat = this.lumMaterial; // Use Basic Material for Glow
+            } else if (entry.isTransparent) {
+                selectedMat = this.tMaterial;
+            }
+
             const mesh = new THREE.InstancedMesh(
-                this.factory.create(type, chunk.biome),
-                entry.isTransparent ? this.tMaterial : this.material,
+                this.factory.create(entry.name.toLowerCase(), chunk.biome),
+                selectedMat,
                 list.length
             );
 
