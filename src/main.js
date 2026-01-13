@@ -7,6 +7,8 @@ import ChunkManager from './lib/chunks/ChunkManager.js';
 import World from './lib/World.js';
 import { Environment } from './lib/Sky.js';
 import { TickManager } from './lib/TickManager.js';
+import { Cow } from './lib/mobs/Cow.js';
+import { Zombie } from './lib/mobs/Zombie.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -49,10 +51,19 @@ const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
 const sky = new Environment(scene, renderer);
 
+world.chunkManager = chunkManager;
+
+// const mobManager = new MobManager(world, player);
+
 world.setDimension('overworld');
 sky.setDimension('overworld');
 world.safeSpawn(player);
 
+// mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
+// mobManager.spawnMob('zombie', new THREE.Vector3(30, 20, 30));
+
+const cow = new Cow(world, new THREE.Vector3(26, 30, 26));
+const zombie = new Zombie(world, new THREE.Vector3(28, 30, 28), player);
 
 const tickManager = new TickManager(chunkManager, world);
 
@@ -66,6 +77,9 @@ function animate() {
 
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
+
+    cow.update(delta);
+    zombie.update(delta);
 
     // tickManager.update(delta);
     player.UI.updateDebugInfo(player, world);

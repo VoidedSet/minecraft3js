@@ -20,8 +20,9 @@ export class PlayerPhysics {
     update(velocity) {
         this.updateCollider();
 
-        const min = this.colliderMin;
-        const max = this.colliderMax;
+        // 1. CLONE the bounds so we can modify them during the loop
+        const min = this.colliderMin.clone();
+        const max = this.colliderMax.clone();
 
         const start = this.overlapRegion.startPos;
         const end = this.overlapRegion.endPos;
@@ -37,6 +38,7 @@ export class PlayerPhysics {
                         const blockMax = new THREE.Vector3(x + 1, y + 1, z + 1);
 
                         if (this.aabbIntersect(min, max, blockMin, blockMax)) {
+                            // 2. Pass 'min' and 'max' to be updated if a collision occurs
                             const below = this.resolveCollision(min, max, blockMin, blockMax, velocity);
                             if (below) onGround = true;
                         }
@@ -88,15 +90,30 @@ export class PlayerPhysics {
         if (axis === 'x') {
             const push = maxA.x - minB.x < maxB.x - minA.x ? -overlaps.x : overlaps.x;
             this.player.position.x += push;
+
+            // 3. SHIFT THE CHECKING BOX
+            minA.x += push;
+            maxA.x += push;
+
             velocity.x = 0;
         } else if (axis === 'y') {
             const push = maxA.y - minB.y < maxB.y - minA.y ? -overlaps.y : overlaps.y;
             this.player.position.y += push;
+
+            // 3. SHIFT THE CHECKING BOX
+            minA.y += push;
+            maxA.y += push;
+
             velocity.y = 0;
-            return push > 0; // pushed upward = hit ground
+            return push > 0;
         } else if (axis === 'z') {
             const push = maxA.z - minB.z < maxB.z - minA.z ? -overlaps.z : overlaps.z;
             this.player.position.z += push;
+
+            // 3. SHIFT THE CHECKING BOX
+            minA.z += push;
+            maxA.z += push;
+
             velocity.z = 0;
         }
 
