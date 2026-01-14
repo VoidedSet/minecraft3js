@@ -1,8 +1,10 @@
 import * as THREE from 'three'
 
+const raycaster = new THREE.Raycaster();
+
 export const Raycaster = {
 
-    raycastVoxel(origin, direction, maxDistance, getBlockAt) {
+    raycastVoxel(origin, direction, maxDistance, getBlockAt, mobManager) {
         const pos = origin.clone();
 
         const step = new THREE.Vector3(
@@ -74,6 +76,30 @@ export const Raycaster = {
             }
         }
 
+        return null;
+    },
+
+    raycastMobs(origin, direction, maxDistance, mobs) {
+        raycaster.set(origin, direction);
+        raycaster.far = maxDistance;
+
+        const hitboxes = [];
+        for (let i = 0; i < mobs.length; i++) {
+            if (mobs[i].hitbox) {
+                hitboxes.push(mobs[i].hitbox);
+            }
+        }
+
+        const intersects = raycaster.intersectObjects(hitboxes, false);
+
+        if (intersects.length > 0) {
+            const hit = intersects[0];
+            return {
+                mob: hit.object.userData.mobInstance,
+                distance: hit.distance,
+                point: hit.point
+            };
+        }
         return null;
     },
 

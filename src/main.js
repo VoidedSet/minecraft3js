@@ -9,6 +9,7 @@ import { Environment } from './lib/Sky.js';
 import { TickManager } from './lib/TickManager.js';
 import { Cow } from './lib/mobs/Cow.js';
 import { Zombie } from './lib/mobs/Zombie.js';
+import { MobManager } from './lib/mobs/MobManager.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -53,19 +54,24 @@ const sky = new Environment(scene, renderer);
 
 world.chunkManager = chunkManager;
 
-// const mobManager = new MobManager(world, player);
+const mobManager = new MobManager(world, player);
 
 world.setDimension('overworld');
 sky.setDimension('overworld');
 world.safeSpawn(player);
 
-// mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
-// mobManager.spawnMob('zombie', new THREE.Vector3(30, 20, 30));
+mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
+mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
+mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
+mobManager.spawnMob('zombie', new THREE.Vector3(30, 20, 30));
+mobManager.spawnMob('pig', new THREE.Vector3(31, 31, 31))
 
-const cow = new Cow(world, new THREE.Vector3(26, 30, 26));
-const zombie = new Zombie(world, new THREE.Vector3(28, 30, 28), player);
+player.mobManager = mobManager;
 
-const tickManager = new TickManager(chunkManager, world);
+// const cow = new Cow(world, new THREE.Vector3(26, 30, 26));
+// const zombie = new Zombie(world, new THREE.Vector3(28, 30, 28), player);
+
+// const tickManager = new TickManager(chunkManager, world);
 
 function animate() {
     requestAnimationFrame(animate);
@@ -78,8 +84,7 @@ function animate() {
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
 
-    cow.update(delta);
-    zombie.update(delta);
+    mobManager.update(delta);
 
     // tickManager.update(delta);
     player.UI.updateDebugInfo(player, world);
@@ -91,15 +96,11 @@ animate();
 
 window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyN') {
-        const currentPos = player.position.clone(); // 1. Save Position
-
         const newDim = world.dimension === 'overworld' ? 'nether' : 'overworld';
 
-        // 2. Switch System Dimensions
         world.setDimension(newDim);
         sky.setDimension(newDim);
 
-        // 3. Restore Position (TP to same coords)
         if (newDim === "nether")
             player.position.set(player.position.x / 8, player.position.y, player.position.z / 8);
         else player.position.set(player.position.x * 8, player.position.y, player.position.z * 8)

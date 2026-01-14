@@ -71,6 +71,31 @@ export class UI {
         this.blockNameOverlay.style.opacity = '0';
         this.blockNameOverlay.style.transition = 'opacity 0.5s';
         document.body.appendChild(this.blockNameOverlay);
+
+        this.mobInfoOverlay = document.createElement('div');
+        this.mobInfoOverlay.style.position = 'fixed';
+        this.mobInfoOverlay.style.top = '55%'; // Slightly below center
+        this.mobInfoOverlay.style.left = '50%';
+        this.mobInfoOverlay.style.transform = 'translate(-50%, 0)';
+        this.mobInfoOverlay.style.color = 'red';
+        this.mobInfoOverlay.style.fontFamily = 'monospace';
+        this.mobInfoOverlay.style.fontSize = '18px';
+        this.mobInfoOverlay.style.textShadow = '1px 1px 0 #000';
+        this.mobInfoOverlay.style.display = 'none';
+        document.body.appendChild(this.mobInfoOverlay);
+    }
+
+    showMobInfo(mob) {
+        if (!mob) {
+            this.mobInfoOverlay.style.display = 'none';
+            return;
+        }
+
+        this.mobInfoOverlay.style.display = 'block';
+        this.mobInfoOverlay.innerHTML = `
+            ${mob.config.name} <br>
+            Health: ${mob.health}
+        `;
     }
 
     updateDebugInfo(player, world) {
