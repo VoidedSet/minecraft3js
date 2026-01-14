@@ -7,9 +7,8 @@ import ChunkManager from './lib/chunks/ChunkManager.js';
 import World from './lib/World.js';
 import { Environment } from './lib/Sky.js';
 import { TickManager } from './lib/TickManager.js';
-import { Cow } from './lib/mobs/Cow.js';
-import { Zombie } from './lib/mobs/Zombie.js';
 import { MobManager } from './lib/mobs/MobManager.js';
+import { VRAMUsage } from './lib/VRAMUsage.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -60,18 +59,13 @@ world.setDimension('overworld');
 sky.setDimension('overworld');
 world.safeSpawn(player);
 
-mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
-mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
-mobManager.spawnMob('cow', new THREE.Vector3(24, 20, 24));
-mobManager.spawnMob('zombie', new THREE.Vector3(30, 20, 30));
-mobManager.spawnMob('pig', new THREE.Vector3(31, 31, 31))
-
 player.mobManager = mobManager;
-
-// const cow = new Cow(world, new THREE.Vector3(26, 30, 26));
-// const zombie = new Zombie(world, new THREE.Vector3(28, 30, 28), player);
+world.mobManager = mobManager;
 
 // const tickManager = new TickManager(chunkManager, world);
+
+const vramTracker = new VRAMUsage(renderer, scene);
+let vramTimer = 0;
 
 function animate() {
     requestAnimationFrame(animate);
@@ -84,13 +78,24 @@ function animate() {
     player.update(delta, 1);
     chunkManager.chunkChangeCheck(player, world)
 
-    mobManager.update(delta);
+    const isNight = sky.time > 0.5 && sky.time < 0.9;
+
+    mobManager.update(delta, isNight);
+
+    player.UI.updateMobCounts(mobManager.mobs.length, mobManager.getSavedMobCount());
 
     // tickManager.update(delta);
     player.UI.updateDebugInfo(player, world);
     world.fluidSim.update(delta);
-    renderer.render(scene, camera);
 
+    vramTimer += delta;
+    if (vramTimer > 1.0) {
+        vramTimer = 0;
+        const stats = vramTracker.getStats(world);
+        player.UI.updatevramDebugInfo(stats);
+    }
+
+    renderer.render(scene, camera);
 }
 animate();
 

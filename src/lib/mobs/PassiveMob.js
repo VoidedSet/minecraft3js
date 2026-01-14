@@ -10,7 +10,6 @@ export class PassiveMob extends BaseMob {
         this.player = player;
         this.state = 'idle'; // idle, walk, panic, inLove, follow_mate
         this.timer = 0;
-        this.list = []
         this.moveDir = new THREE.Vector3();
 
         this.inLove = false;
@@ -20,30 +19,38 @@ export class PassiveMob extends BaseMob {
     takeDamage(amount, attackerPos) {
         super.takeDamage(amount, attackerPos);
 
-        // Enter Panic Mode when hit!
         if (!this.isDead) {
             this.state = 'panic';
-            this.timer = 5.0; // Run for 5 seconds
-            this.moveSpeed = this.runSpeed;
+            this.timer = 8.0;
 
-            // Run AWAY from attacker
             const runDir = new THREE.Vector3().subVectors(this.position, attackerPos).normalize();
             this.moveDir.copy(runDir);
+
+            if (this.onGround) {
+                this.velocity.y = 2;
+                this.onGround = false;
+            }
         }
     }
 
     interact(itemHeld) {
         if (this.config.attraction_items.includes(itemHeld)) {
+            let consumed = false;
 
             if (this.health < this.maxHealth) {
                 this.health = Math.min(this.health + 4, this.maxHealth);
-                return true;
+                consumed = true;
             }
             else if (!this.isBaby && !this.inLove) {
                 this.inLove = true;
                 this.loveTimer = 10.0;
-                return true;
+                consumed = true;
             }
+
+            if (consumed)
+                this.hasInteracted = true;
+
+            return consumed;
         }
         return false;
     }
@@ -51,17 +58,19 @@ export class PassiveMob extends BaseMob {
     update(delta) {
         this.aiUpdate(delta);
 
-        if (this.state === 'walk') {
-            this.velocity.x += this.moveDir.x * this.walkSpeed * delta;
-            this.velocity.z += this.moveDir.z * this.walkSpeed * delta;
+        if (this.state === 'walk' || this.state === 'panic') {
+            const speed = (this.state === 'panic') ? this.runSpeed * 4 : this.walkSpeed;
 
-            if (this.onGround && Math.random() < 0.002) {
+            this.velocity.x += this.moveDir.x * speed * delta;
+            this.velocity.z += this.moveDir.z * speed * delta;
+
+            if (this.onGround && Math.random() < 0.005) {
                 this.velocity.y = 7;
                 this.onGround = false;
             }
         }
 
-        if (this.config.attraction_items.includes(this.player.itemHeld)) {
+        if (this.state !== 'panic' && this.config.attraction_items.includes(this.player.itemHeld)) {
             this.followPlayer(delta);
         }
 
@@ -82,6 +91,11 @@ export class PassiveMob extends BaseMob {
                 this.state = 'idle';
             }
             this.pickNewState();
+        }
+
+        if (this.state === 'panic' && Math.random() < 0.05) {
+            const angle = Math.random() * Math.PI;
+            this.moveDir.set(Math.sin(angle), 0, Math.cos(angle));
         }
     }
 
@@ -134,7 +148,6 @@ export class PassiveMob extends BaseMob {
         let minDist = 10;
 
         for (const mob of mobs) {
-            // Must be same type, not self, in love, and not baby
             if (mob !== this && mob.config.name === this.config.name && mob.inLove && !mob.isBaby) {
                 const dist = this.position.distanceTo(mob.position);
                 if (dist < minDist) {
@@ -143,14 +156,13 @@ export class PassiveMob extends BaseMob {
                 }
             }
         }
+
         if (closestMate) {
             this.state = 'follow_mate';
 
-            // Move towards mate
             const dir = new THREE.Vector3().subVectors(closestMate.position, this.position).normalize();
             this.moveDir.copy(dir);
 
-            // If touching, MAKE BABY
             if (minDist < 1.5) {
                 this.inLove = false;
                 closestMate.inLove = false;

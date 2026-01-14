@@ -49,23 +49,17 @@ export class Player {
             if (!this.controls.isLocked) return;
 
             if (this.lastFocusedMob) {
-                // Left Click (0): Attack
-                if (event.button === 0) {
-                    // Deal 2 damage (1 heart = 2 hp typically, but we used 10 maxHealth, so 2 is good)
+                if (event.button === 2) {
                     this.lastFocusedMob.takeDamage(2, this.position);
 
-                    // Optional: Play sound
                 }
-                // Right Click (2): Feed / Interact
-                else if (event.button === 2) {
+                else if (event.button === 0) {
                     const consumed = this.lastFocusedMob.interact(this.itemHeld);
                     if (consumed) {
-                        // Logic to remove item from inventory?
-                        // For now infinite items is fine for creative mode
                         console.log("Fed mob!");
                     }
                 }
-                return; // Important: Don't place blocks if we interacted with a mob
+                return;
             }
 
             const dir = new THREE.Vector3();
@@ -81,27 +75,17 @@ export class Player {
 
             const { hitPos, placePos } = result;
             const blockId = this.chunkManager.returnBlockId(hitPos);
-            let light;
             switch (event.button) {
-                case 0: // Left click - place
-                    if (this.UI.hotbar[this.UI.selectedSlot] == 10) {
-                        light = new THREE.PointLight(0xffff00, 8, 10);
-                        this.scene.add(light)
-                        light.position.set(placePos.x + 0.5, placePos.y + 1, placePos.z + 0.5)
-                    }
+                case 0:
                     this.chunkManager.placeBlockAt(this.UI.hotbar[this.UI.selectedSlot], placePos)
 
                     break;
-                case 2: // Right click - break
-                    if (this.chunkManager.returnBlockId(hitPos) === 10) {
-                        this.scene.remove(light);
-                        console.log(light)
-                    }
-
+                case 2:
                     this.chunkManager.placeBlockAt(0, hitPos);
                     break;
-                case 1: // Middle click - pick
-                    this.UI.setHotbarSlot(blockId);
+                case 1:
+                    if (!this.UI.hotbar.includes(blockId))
+                        this.UI.setHotbarSlot(blockId);
                     break;
             }
         });

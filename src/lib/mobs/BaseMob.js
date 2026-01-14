@@ -1,6 +1,34 @@
 import * as THREE from 'three';
 import { PlayerPhysics } from '../player/PlayerPhysics.js';
 
+function createCowTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Base Brown Color
+    ctx.fillStyle = '#411000';
+    ctx.fillRect(0, 0, 64, 64);
+
+    // 2. Random White/Grey Patches
+    ctx.fillStyle = '#e0e0e0';
+
+    // Draw 8 random patches
+    for (let i = 0; i < 4; i++) {
+        const w = 8 + Math.random() * 16;
+        const h = 12 + Math.random() * 16;
+        const x = Math.random() * 64 - (w / 2);
+        const y = Math.random() * 64 - (h / 2);
+
+        ctx.fillRect(x, y, w, h);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.magFilter = THREE.NearestFilter; // Keep it pixelated/blocky
+    return texture;
+}
+
 export class BaseMob {
     constructor(world, startPos, config) {
         this.world = world;
@@ -26,6 +54,8 @@ export class BaseMob {
         this.health = this.maxHealth;
         this.isDead = false;
         this.isBaby = false;
+
+        this.hasInteracted = false;
 
         this.buildMesh(config);
     }
@@ -68,13 +98,27 @@ export class BaseMob {
     }
 
     buildQuadruped(w, h, d, colors) {
-        const material = new THREE.MeshLambertMaterial({ color: colors.body });
+        let material;
+
+        // If it's a Cow, generate a unique patched texture!
+        if (this.config.name === 'Cow') {
+            material = new THREE.MeshLambertMaterial({
+                map: createCowTexture(),
+                color: 0xffffff // White tint so texture shows clearly
+            });
+        } else {
+            // Default for Pigs/Others
+            material = new THREE.MeshLambertMaterial({ color: colors.body });
+        }
+
         const body = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.6, d), material);
         body.position.y = h * 0.7;
         this.mesh.add(body);
+
         const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), material);
         head.position.set(0, h * 0.9, d * 0.5);
         this.mesh.add(head);
+
         const legGeo = new THREE.BoxGeometry(0.25, h * 0.4, 0.25);
         [[-0.3, 0.4], [0.3, 0.4], [-0.3, -0.4], [0.3, -0.4]].forEach(([x, z]) => {
             const leg = new THREE.Mesh(legGeo, material);
@@ -150,11 +194,11 @@ export class BaseMob {
     flashRed() {
         this.mesh.traverse((child) => {
             if (child.isMesh && child.material) {
-                const oldColor = child.material.color.getHex();
-                console.log(oldColor)
-                child.material.color.setHex(0xff0000);
+                const oldColor = child.material.color;
+                child.material.color.add(new THREE.Color("rgb(255, 0, 0)"));
+
                 setTimeout(() => {
-                    if (child.material) child.material.color.setHex(0xffffff);
+                    if (child.material) child.material.color.sub(new THREE.Color("rgb(255, 0, 0)"));
                 }, 200);
             }
         });

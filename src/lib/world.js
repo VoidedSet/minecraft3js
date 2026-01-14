@@ -39,6 +39,8 @@ export default class World {
             this.world
         );
 
+        this.mobManager = null;
+
         this.init();
     }
 
@@ -165,9 +167,13 @@ export default class World {
         if (this.dimension === dimension) return;
 
         console.log(`Switching dimension to: ${dimension}`);
+
+        if (this.mobManager) {
+            this.mobManager.unloadAll();
+        }
+
         this.dimension = dimension;
 
-        // 1. Clear all current chunks (visuals)
         for (const chunk of this.world.values()) {
             for (const { mesh } of Object.values(chunk.meshes)) {
                 this.scene.remove(mesh);
@@ -175,9 +181,6 @@ export default class World {
             }
         }
 
-        // 2. Clear data maps so we don't load Overworld chunks in Nether
-        // Note: In a real game, you'd save 'overworld_chunks' to disk and load 'nether_chunks'
-        // For now, we will just clear the cache to regenerate them.
         this.world.clear();
 
         // 3. Change Atmosphere

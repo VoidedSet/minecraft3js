@@ -35,6 +35,9 @@ export default class ChunkManager {
 
                     if (!world.world.has(key)) {
                         world.genChunks(nx, nz);
+
+                        if (world.mobManager)
+                            world.mobManager.loadMobs(nx, nz);
                     }
                 }
             }
@@ -42,6 +45,11 @@ export default class ChunkManager {
             // CLEAN UNLOAD LOGIC
             for (const [k, chunk] of world.world.entries()) {
                 if (!toKeep.has(k)) {
+
+                    if (world.mobManager) {
+                        world.mobManager.unloadMobs(chunk.cx, chunk.cz);
+                    }
+
                     const meshesToDispose = Object.values(chunk.meshes);
 
                     requestAnimationFrame(() => {
@@ -55,8 +63,6 @@ export default class ChunkManager {
                         }
                     });
 
-                    // We ONLY save solid block modifications, not fluids
-                    // Fluids are discarded as requested
                     world.world.delete(k);
                 }
             }
@@ -66,12 +72,12 @@ export default class ChunkManager {
             const biome = world.getBiome(wx, wz);
             // console.log(`Entered Chunk [${cx}, ${cz}] - Biome: ${biome}`);
 
-            console.log(
-                `Chunks loaded: ${world.world.size}`,
-                performance.memory
-                    ? `Memory usage: ${(performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`
-                    : "Memory usage: N/A (performance.memory unsupported)"
-            );
+            // console.log(
+            //     `Chunks loaded: ${world.world.size}`,
+            //     performance.memory
+            //         ? `Memory usage: ${(performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`
+            //         : "Memory usage: N/A (performance.memory unsupported)"
+            // );
         }
     }
 
@@ -139,7 +145,7 @@ export default class ChunkManager {
         const chunk = this.world.world.get(key);
 
         if (!chunk) {
-            console.warn(`Chunk ${key} not found`);
+            // console.warn(`Chunk ${key} not found`);
             return 0;
         }
 

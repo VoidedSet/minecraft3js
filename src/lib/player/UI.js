@@ -83,6 +83,47 @@ export class UI {
         this.mobInfoOverlay.style.textShadow = '1px 1px 0 #000';
         this.mobInfoOverlay.style.display = 'none';
         document.body.appendChild(this.mobInfoOverlay);
+
+        this.mobStats = document.createElement('div');
+        this.mobStats.style.position = 'absolute';
+        this.mobStats.style.top = '10px';
+        this.mobStats.style.right = '10px'; // Top Right
+        this.mobStats.style.color = 'white';
+        this.mobStats.style.fontFamily = 'monospace';
+        this.mobStats.style.fontSize = '16px';
+        this.mobStats.style.textShadow = '1px 1px 0 #000';
+        this.mobStats.innerHTML = 'Active: 0 | Saved: 0';
+        document.body.appendChild(this.mobStats);
+
+        this.debugPanel = document.createElement('div');
+        this.debugPanel.style.position = 'absolute';
+        this.debugPanel.style.top = '50px';
+        this.debugPanel.style.right = '10px';
+        this.debugPanel.style.color = '#00ff00'; // Matrix Green
+        this.debugPanel.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        this.debugPanel.style.padding = '10px';
+        this.debugPanel.style.fontFamily = 'monospace';
+        this.debugPanel.style.fontSize = '12px';
+        this.debugPanel.style.pointerEvents = 'none'; // Click through
+        this.debugPanel.innerHTML = 'Calculating VRAM...';
+        document.body.appendChild(this.debugPanel);
+    }
+
+    updatevramDebugInfo(stats) {
+        this.debugPanel.innerHTML =
+            `[System]<br>
+            Chunks    : ${stats.system.chunks}<br>
+            JS Heap   : ${stats.system.jsHeap}<br><br>
+           
+           [GPU Est.]<br>
+            Textures  : ${stats.textures.size} (${stats.textures.count})<br>
+            Geometry  : ${stats.geometries.size}<br>
+            Draw Calls: ${stats.scene.drawCalls}<br>
+            Entities  : ${stats.scene.meshes}`;
+    }
+
+    updateMobCounts(active, saved) {
+        this.mobStats.innerHTML = `Active: ${active} | Saved: ${saved}`;
     }
 
     showMobInfo(mob) {
@@ -94,7 +135,8 @@ export class UI {
         this.mobInfoOverlay.style.display = 'block';
         this.mobInfoOverlay.innerHTML = `
             ${mob.config.name} <br>
-            Health: ${mob.health}
+            Health: ${mob.health} <br>
+            State: ${mob.state}
         `;
     }
 
@@ -164,7 +206,6 @@ export class UI {
                 : null;
 
             if (slot) {
-                // Highlight color
                 slot.style.borderColor = i === this.selectedSlot ? "white" : "#555";
                 slot.style.transform = i === this.selectedSlot ? "scale(1.1)" : "scale(1)";
             }
