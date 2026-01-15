@@ -103,6 +103,7 @@ export class ChunkRenderer {
 
             if (entry.isTransparent) mesh.renderOrder = 1;
 
+            mesh.name = `${entry.name.toLowerCase()}_${cx},${cz}`
             this.scene.add(mesh);
             meshes[id] = { mesh, index: 0 };
         }

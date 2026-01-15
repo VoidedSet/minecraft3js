@@ -1,36 +1,13 @@
 import * as THREE from 'three';
 import { PlayerPhysics } from '../player/PlayerPhysics.js';
-
-function createCowTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-
-    // 1. Base Brown Color
-    ctx.fillStyle = '#411000';
-    ctx.fillRect(0, 0, 64, 64);
-
-    // 2. Random White/Grey Patches
-    ctx.fillStyle = '#e0e0e0';
-
-    // Draw 8 random patches
-    for (let i = 0; i < 4; i++) {
-        const w = 8 + Math.random() * 16;
-        const h = 12 + Math.random() * 16;
-        const x = Math.random() * 64 - (w / 2);
-        const y = Math.random() * 64 - (h / 2);
-
-        ctx.fillRect(x, y, w, h);
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.magFilter = THREE.NearestFilter; // Keep it pixelated/blocky
-    return texture;
-}
+import { GLTFLoader } from 'three/examples/jsm/Addons.js';
+import { Mobs } from './Mobs.js';
 
 export class BaseMob {
     constructor(world, startPos, config) {
+
+        this.modelLoader = new GLTFLoader();
+
         this.world = world;
         this.position = startPos.clone();
         this.velocity = new THREE.Vector3();
@@ -60,6 +37,32 @@ export class BaseMob {
         this.buildMesh(config);
     }
 
+    loadModel(width, height, depth, url) {
+        this.modelLoader.load("/assets/models.glb", (gltf) => {
+            this.model = gltf.scene.getObjectByName(url);
+            this.mesh.add(this.model);
+
+
+            this.model.material.transparent = false;
+
+            this.model.material.alphaTest = 0.5;
+
+            this.model.material.depthWrite = true;
+
+            this.model.material.side = THREE.FrontSide;
+        }, undefined, (error) => {
+            console.error(`Error loading mob model ${url}:`, error);
+            const errorBox = new THREE.Mesh(
+                new THREE.BoxGeometry(0.5, 0.5, 0.5),
+                new THREE.MeshBasicMaterial({ color: 'red' })
+            );
+            this.mesh.add(errorBox);
+        });
+
+        if (url === Mobs.dog.modelSrc)
+            console.log("dog")
+    }
+
     buildMesh(config) {
         this.mesh = new THREE.Group();
         this.mesh.position.copy(this.position);
@@ -67,11 +70,8 @@ export class BaseMob {
 
         const { width, height, depth } = config.collider;
 
-        if (config.model === 'quadruped') {
-            this.buildQuadruped(width, height, depth, config.colors);
-        } else if (config.model === 'humanoid') {
-            this.buildHumanoid(width, height, depth, config.colors);
-        }
+        if (config.modelSrc)
+            this.loadModel(width, height, depth, config.modelSrc);
 
         const hitboxGeo = new THREE.BoxGeometry(width, height, depth);
 
@@ -95,64 +95,6 @@ export class BaseMob {
         if (this.hitbox) {
             this.hitbox.material.visible = isFocused;
         }
-    }
-
-    buildQuadruped(w, h, d, colors) {
-        let material;
-
-        // If it's a Cow, generate a unique patched texture!
-        if (this.config.name === 'Cow') {
-            material = new THREE.MeshLambertMaterial({
-                map: createCowTexture(),
-                color: 0xffffff // White tint so texture shows clearly
-            });
-        } else {
-            // Default for Pigs/Others
-            material = new THREE.MeshLambertMaterial({ color: colors.body });
-        }
-
-        const body = new THREE.Mesh(new THREE.BoxGeometry(w, h * 0.6, d), material);
-        body.position.y = h * 0.7;
-        this.mesh.add(body);
-
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), material);
-        head.position.set(0, h * 0.9, d * 0.5);
-        this.mesh.add(head);
-
-        const legGeo = new THREE.BoxGeometry(0.25, h * 0.4, 0.25);
-        [[-0.3, 0.4], [0.3, 0.4], [-0.3, -0.4], [0.3, -0.4]].forEach(([x, z]) => {
-            const leg = new THREE.Mesh(legGeo, material);
-            leg.position.set(x, h * 0.2, z);
-            this.mesh.add(leg);
-        });
-    }
-
-    buildHumanoid(w, h, d, colors) {
-        const skin = new THREE.MeshLambertMaterial({ color: colors.skin });
-        const shirt = new THREE.MeshLambertMaterial({ color: colors.shirt });
-        const pants = new THREE.MeshLambertMaterial({ color: colors.pants });
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), skin);
-        head.position.y = h * 0.9;
-        this.mesh.add(head);
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.3), shirt);
-        body.position.y = h * 0.6;
-        this.mesh.add(body);
-        const armGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-        const leftArm = new THREE.Mesh(armGeo, skin);
-        leftArm.position.set(-0.4, h * 0.7, 0.4);
-        leftArm.rotation.x = -Math.PI / 2;
-        this.mesh.add(leftArm);
-        const rightArm = new THREE.Mesh(armGeo, skin);
-        rightArm.position.set(0.4, h * 0.7, 0.4);
-        rightArm.rotation.x = -Math.PI / 2;
-        this.mesh.add(rightArm);
-        const legGeo = new THREE.BoxGeometry(0.25, 0.8, 0.25);
-        const leftLeg = new THREE.Mesh(legGeo, pants);
-        leftLeg.position.set(-0.15, 0.4, 0);
-        this.mesh.add(leftLeg);
-        const rightLeg = new THREE.Mesh(legGeo, pants);
-        rightLeg.position.set(0.15, 0.4, 0);
-        this.mesh.add(rightLeg);
     }
 
     updatePhysics(delta) {

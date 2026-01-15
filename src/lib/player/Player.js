@@ -10,13 +10,11 @@ export class Player {
         this.scene = scene;
         this.camera = camera;
         this.chunkManager = chunkManager;
-        this.debugRay = true;
 
         this.controls = new PointerLockControls(camera, document.body);
         scene.add(this.controls.object);
 
         world.safeSpawn(this);
-
 
         this.position = this.controls.object.position.clone();
 
@@ -24,14 +22,13 @@ export class Player {
         this.physics = new PlayerPhysics(this, this.chunkManager)
         this.movement = new PlayerMovement(this);
 
-        // this.world.safeSpawn(this)
-
         this.marker = new THREE.Mesh(
             new THREE.BoxGeometry(1.01, 1.01, 1.01),
             new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.05 })
         );
         this.marker.visible = false;
         this.marker.renderOrder = 3;
+        this.marker.name = "block_marker"
         this.scene.add(this.marker);
 
         this.initAim();

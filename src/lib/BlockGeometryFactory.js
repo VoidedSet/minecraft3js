@@ -39,13 +39,8 @@ export class BlockGeometryFactory {
         const level = options.level ?? 8;
 
         const isBiomeDependent = ['grass', 'leaves', 'oak_leaves', 'spruce_leaves', 'jungle_leaves', 'water'].includes(type);
-        const isLevelDependent = (type === 'water' || type === 'lava');
-
-        const isAnimated = (type === 'water' || type === 'lava');
 
         let cacheKey = type;
-        if (isBiomeDependent) cacheKey += `_${biome}`;
-        if (isLevelDependent) cacheKey += `_lvl${level}`;
 
         if (this.geometryCache.has(cacheKey)) {
             return this.geometryCache.get(cacheKey);
@@ -55,12 +50,16 @@ export class BlockGeometryFactory {
 
         if (type === "torch") {
             geo = new THREE.BoxGeometry(0.23, 0.8, 0.3);
+            geo.name = cacheKey
             geo.translate(0, -0.2, 0);
         } else if (type === 'water') {
             const height = (level / 8) * 1.0 - 0.2; // full block = 1
             geo = new THREE.BoxGeometry(1, height, 1);
+            geo.name = cacheKey
+            geo.translate(0, -0.2, 0)
         } else {
             geo = new THREE.BoxGeometry(1, 1, 1);
+            geo.name = cacheKey
         }
 
         const uvs = this.atlas.getUVs(type);

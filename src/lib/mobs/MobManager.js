@@ -26,17 +26,13 @@ export class MobManager {
     }
 
     disposeMob(mob) {
-        // 1. Remove from Scene immediately
         this.world.scene.remove(mob.mesh);
 
-        // 2. Dispose memory in next frame (to avoid stutter)
         requestAnimationFrame(() => {
             mob.mesh.traverse((child) => {
                 if (child.isMesh) {
-                    // Dispose Geometry
                     if (child.geometry) child.geometry.dispose();
 
-                    // Dispose Material(s) & Textures
                     if (child.material) {
                         const materials = Array.isArray(child.material) ? child.material : [child.material];
 
@@ -72,7 +68,6 @@ export class MobManager {
                     hasInteracted: true
                 });
             }
-            // Use new disposal
             this.disposeMob(mob);
         }
         this.mobs = [];
@@ -102,7 +97,6 @@ export class MobManager {
                     });
                 }
 
-                // Use new disposal
                 this.disposeMob(mob);
                 this.mobs.splice(i, 1);
             }
@@ -137,8 +131,6 @@ export class MobManager {
         // --- CHECK 1: Global Mob Cap ---
         if (this.mobs.length >= GLOBAL_MOB_CAP) return;
 
-        if (this.world.dimension !== 'overworld') return;
-
         const chunkSize = this.world.chunkSize;
         const wx = cx * chunkSize;
         const wz = cz * chunkSize;
@@ -146,13 +138,17 @@ export class MobManager {
 
         let possibleMobs = [];
 
-        if (this.currentIsNight) {
-            possibleMobs = ['zombie'];
+        if (this.world.dimension === 'nether') {
+            possibleMobs = ['zombie_pigman']
         } else {
-            if (biome === 'plains' || biome === 'hills') {
-                possibleMobs = ['cow', 'pig'];
-            } else if (biome === 'mountains') {
-                possibleMobs = ['cow'];
+            if (this.currentIsNight) {
+                possibleMobs = ['zombie'];
+            } else {
+                if (biome === 'plains' || biome === 'hills') {
+                    possibleMobs = ['cow', 'pig'];
+                } else if (biome === 'mountains') {
+                    possibleMobs = ['cow', 'dogs'];
+                }
             }
         }
 
@@ -173,7 +169,7 @@ export class MobManager {
 
             let gy = 100;
             for (let y = 50; y > 15; y--) {
-                if (this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz)) === BlockDict.grass.id) {
+                if (this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz)) === BlockDict.grass.id || this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz)) === BlockDict.netherrack.id) {
                     gy = y + 2;
                     break;
                 }

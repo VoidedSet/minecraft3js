@@ -111,15 +111,18 @@ export class UI {
 
     updatevramDebugInfo(stats) {
         this.debugPanel.innerHTML =
-            `[System]<br>
-            Chunks    : ${stats.system.chunks}<br>
-            JS Heap   : ${stats.system.jsHeap}<br><br>
+            `[System] <br>
+            Chunks   : ${stats.system.chunks}<br>
+             ${stats.system.jsHeap} / ${stats.system.limit}<br><br>
            
-           [GPU Est.]<br>
-            Textures  : ${stats.textures.size} (${stats.textures.count})<br>
-            Geometry  : ${stats.geometries.size}<br>
-            Draw Calls: ${stats.scene.drawCalls}<br>
-            Entities  : ${stats.scene.meshes}`;
+           [GPU Memory]<br>
+            Textures : ${stats.gpu.textures}<br>
+            Geometry : ${stats.gpu.geometries}<br>
+            Shaders  : ${stats.shaders}<br><br>
+           
+           [Frame Render]<br>
+            Calls    : ${stats.frame.calls}<br>
+            Tris     : ${stats.frame.triangles}`;
     }
 
     updateMobCounts(active, saved) {

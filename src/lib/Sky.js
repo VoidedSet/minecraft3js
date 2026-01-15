@@ -80,6 +80,7 @@ export class Environment {
         this.particles = new THREE.Points(geometry, material);
         this.particles.visible = false;
         this.particles.frustumCulled = false;
+        this.particles.name = "nether_particles";
         this.scene.add(this.particles);
     }
 
@@ -91,7 +92,6 @@ export class Environment {
             this.renderer.setClearColor(0x200505);
             this.scene.fog = new THREE.FogExp2(0x300505, 0.02);
 
-            // Set Lights to Nether Pink/Red
             this.ambient.color.setHex(0xcccccc);
             this.ambient.intensity = 0.4;
             this.sun.color.setHex(0xffaff5);
@@ -101,7 +101,6 @@ export class Environment {
 
         } else {
             // --- OVERWORLD SETTINGS ---
-            // [FIX] Reset Sun and Ambient to White so they aren't pink
             this.sun.color.setHex(0xffffff);
             this.ambient.color.setHex(0xffffff);
 

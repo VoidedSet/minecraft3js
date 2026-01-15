@@ -45,7 +45,7 @@ const material = new THREE.MeshLambertMaterial({
 });
 
 const world = new World(scene, factory, material);
-const chunkManager = new ChunkManager(world.chunkSize, 6, world, world.modifiedMap);
+const chunkManager = new ChunkManager(world.chunkSize, 5, world, world.modifiedMap);
 
 const player = new Player(scene, camera, chunkManager, world);
 const clock = new THREE.Clock();
@@ -62,7 +62,7 @@ world.safeSpawn(player);
 player.mobManager = mobManager;
 world.mobManager = mobManager;
 
-// const tickManager = new TickManager(chunkManager, world);
+const tickManager = new TickManager(chunkManager, world);
 
 const vramTracker = new VRAMUsage(renderer, scene);
 let vramTimer = 0;
@@ -84,7 +84,7 @@ function animate() {
 
     player.UI.updateMobCounts(mobManager.mobs.length, mobManager.getSavedMobCount());
 
-    // tickManager.update(delta);
+    tickManager.update(delta);
     player.UI.updateDebugInfo(player, world);
     world.fluidSim.update(delta);
 
