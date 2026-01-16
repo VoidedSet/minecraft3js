@@ -39,6 +39,9 @@ export class Player {
 
         this.mode = 'survival';
 
+        this.bobTimer = 0;
+        this.baseCameraHeight = 0.4;
+
         // console.log(this)
     }
 

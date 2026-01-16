@@ -28,7 +28,7 @@ export class MobManager {
     loadAssets() {
         const loader = new GLTFLoader();
         loader.load('/assets/models.glb', (gltf) => {
-            console.log("Mob models loaded.");
+            // console.log("Mob models loaded.");
 
             gltf.scene.traverse((child) => {
                 if (child.isMesh || child.isGroup) {
@@ -204,7 +204,6 @@ export class MobManager {
 
                         if (blockAbove === BlockDict.air.id) {
                             gy = y + 1;
-                            console.log(gy)
                             break
                         }
                     }
@@ -243,7 +242,6 @@ export class MobManager {
             }
 
             if (mobType) {
-                console.log(mobType)
                 this.spawnMob(mobType, new THREE.Vector3(gx + 0.5, gy, gz + 0.5));
             }
         }

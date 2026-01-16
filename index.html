@@ -6,7 +6,8 @@
     <title>MINECRAFT CHUNK</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
-        body {
+        html body {
+            overflow: hidden;
             margin: 0;
         }
 
@@ -63,6 +64,17 @@
         .block-slot:hover {
             border-color: yellow;
         }
+
+        #vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0) 85%, rgba(0, 0, 0, 0.3) 100%);
+            pointer-events: none;
+            z-index: 5;
+        }
     </style>
 </head>
 
@@ -79,7 +91,7 @@
             </p>
         </div>
     </div>
-
+    <div id="vignette"></div>
     <div id="crosshair"
         style="position: fixed; left: 50%; top: 50%; color: white; mix-blend-mode: difference; z-index: 2;">
         <b style="font-size: 1.2em;">+</b>
