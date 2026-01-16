@@ -18,7 +18,6 @@ export class MobManager {
         this.savedMobs = new Map();
         this.currentIsNight = false;
 
-        // Model Caching
         this.modelTemplates = new Map();
         this.areModelsLoaded = false;
         this.loadAssets();
@@ -157,7 +156,7 @@ export class MobManager {
                     if (mob.isBaby) mob.mesh.scale.set(0.5, 0.5, 0.5);
                 }
             }
-            this.generateAggressiveMobs(cx, cz);
+            // this.generateAggressiveMobs(cx, cz);
         } else {
             this.generateMobsForChunk(cx, cz);
         }
@@ -172,7 +171,6 @@ export class MobManager {
         for (let i = 0; i < attempts; i++) {
             if (this.mobs.length >= GLOBAL_MOB_CAP) break;
 
-            // 30% chance to skip (controls density)
             if (Math.random() > 0.7) continue;
 
             const chunkSize = this.world.chunkSize;
@@ -181,14 +179,13 @@ export class MobManager {
             const gx = (cx * chunkSize) + lx;
             const gz = (cz * chunkSize) + lz;
 
-            // --- SCANNING LOGIC FIXED ---
+            // --- Y SCANNING ---
             let gy = -1;
 
             if (this.world.dimension === 'nether') {
                 for (let y = 33; y < 65; y++) {
                     const blockId = this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz));
 
-                    // Valid Floor: Solid, Not Air, Not Lava
                     if (blockId !== BlockDict.air.id && blockId !== BlockDict.lava.id && blockId !== BlockDict.water.id) {
                         const blockAbove = this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y + 1, gz));
 
@@ -199,8 +196,6 @@ export class MobManager {
                     }
                 }
             } else {
-                // OVERWORLD: Scan Top-Down
-                // Start high enough to clear mountains
                 for (let y = 85; y > 12; y--) {
                     const blockId = this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz));
 
@@ -258,9 +253,7 @@ export class MobManager {
         if (!this.areModelsLoaded) return;
         if (this.mobs.length >= GLOBAL_MOB_CAP) return;
 
-        // Small chance to spawn occasional zombies even if chunk is loaded
         if (this.world.dimension === 'overworld' && this.currentIsNight && Math.random() < 0.05) {
-            // Logic similar to generateMobsForChunk but strictly for zombies
         }
     }
 

@@ -37,11 +37,25 @@ export class Player {
 
         this.mobManager = null;
 
+        this.mode = 'survival';
+
         // console.log(this)
     }
 
-    initAim() {
+    cycleMode() {
+        const modes = ['survival', 'creative', 'spectator'];
+        const currentIndex = modes.indexOf(this.mode);
+        this.mode = modes[(currentIndex + 1) % modes.length];
 
+        if (this.mode === 'spectator' || this.mode === 'creative') {
+            this.movement.isFlying = true;
+        } else {
+            this.movement.isFlying = false;
+        }
+        console.log(`Switched to ${this.mode} mode`);
+    }
+
+    initAim() {
         document.addEventListener('mousedown', (event) => {
             if (!this.controls.isLocked) return;
 

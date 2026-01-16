@@ -148,7 +148,7 @@ export class ChunkRenderer {
         const key = `${cx},${cz}`;
         const chunk = this.world.get(key);
 
-        if (!chunk) return -1; // return air
+        if (!chunk) return -1;
 
         if (Number.isNaN(cx) || Number.isNaN(cz)) {
             console.warn('Bad chunk coordinates in globalBlockAt:', x, y, z);

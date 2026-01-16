@@ -88,7 +88,6 @@ export class BaseMob {
         this.velocity.z -= this.velocity.z * friction * delta;
         this.mesh.position.copy(this.position);
 
-        // Simple rotation based on movement
         if (new THREE.Vector2(this.velocity.x, this.velocity.z).length() > 0.1) {
             this.mesh.rotation.y = Math.atan2(this.velocity.x, this.velocity.z);
         }
@@ -99,7 +98,6 @@ export class BaseMob {
 
         this.health -= amount;
 
-        // Knockback
         const knockbackDir = new THREE.Vector3()
             .subVectors(this.position, attackerPos)
             .normalize();

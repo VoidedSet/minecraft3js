@@ -54,13 +54,11 @@ export class NeutralMob extends PassiveMob {
             this.tameAttempts++;
             this.hasInteracted = true;
 
-            // 35% chance after first attempt
             if (this.tameAttempts > 1 && Math.random() < 0.35) {
                 this.isTamed = true;
-                this.showHearts(true); // Visual feedback
+                this.showHearts(true); // placeholder vis feedback
                 console.log(`${this.config.name} tamed!`);
             } else {
-                // Failed attempt logic (maybe smoke particles later)
                 console.log("Taming failed...");
             }
             return true;
@@ -73,11 +71,8 @@ export class NeutralMob extends PassiveMob {
         return false;
     }
 
-    // Helper to show hearts (can be expanded later)
     showHearts(success) {
-        // Placeholder for particle effect
         if (success) {
-            // Turn eyes green or something temporary
             this.flashColor(new THREE.Color(0, 1, 0));
         }
     }
