@@ -38,7 +38,7 @@ export class BlockGeometryFactory {
     create(type, biome = 'plains', options = {}) {
         const level = options.level ?? 8;
 
-        const isBiomeDependent = ['grass', 'leaves', 'oak_leaves', 'spruce_leaves', 'jungle_leaves', 'water'].includes(type);
+        const isBiomeDependent = ['leaves', 'oak_leaves', 'spruce_leaves', 'jungle_leaves', 'water'].includes(type);
 
         let cacheKey = type;
 

@@ -99,7 +99,7 @@ export class PlayerMovement {
             velocity.addScaledVector(right, this.direction.x * speed * delta);
 
             if (this.wantsToJump && this.player.onGround) {
-                velocity.y = 6.5;
+                velocity.y = 6;
                 this.wantsToJump = false;
             }
 
