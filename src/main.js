@@ -26,7 +26,7 @@ renderer.setClearColor(0x200505);
 
 // load texture
 const loader = new THREE.TextureLoader();
-const texture = loader.load('../blocks.png');
+const texture = loader.load('./blocks.png');
 texture.magFilter = THREE.NearestFilter;
 texture.minFilter = THREE.NearestFilter;
 texture.wrapS = THREE.ClampToEdgeWrapping;
