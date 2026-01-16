@@ -267,7 +267,7 @@ export class Chunk {
                 }
 
                 for (let y = 1; y <= 10; y++) {
-                    if (CHUNK[x][y][z] === 0 && y === 10) {
+                    if (CHUNK[x][y][z] === 0 && y <= 10) {
                         CHUNK[x][y][z] = BlockDict.water.id;
                     } else if (CHUNK[x][y][z] === BlockDict.grass.id) {
                         CHUNK[x][y][z] = (y < 7) ? BlockDict.stone.id : BlockDict.sand.id;

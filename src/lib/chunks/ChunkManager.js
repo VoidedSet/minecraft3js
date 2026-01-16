@@ -36,8 +36,7 @@ export default class ChunkManager {
                     if (!world.world.has(key)) {
                         world.genChunks(nx, nz);
 
-                        if (world.mobManager && world.dimension === "overworld")
-                            world.mobManager.loadMobs(nx, nz);
+                        world.mobManager.loadMobs(nx, nz);
                     }
                 }
             }
@@ -46,9 +45,7 @@ export default class ChunkManager {
             for (const [k, chunk] of world.world.entries()) {
                 if (!toKeep.has(k)) {
 
-                    if (world.mobManager && world.dimension === "overworld") {
-                        world.mobManager.unloadMobs(chunk.cx, chunk.cz);
-                    }
+                    world.mobManager.unloadMobs(chunk.cx, chunk.cz);
 
                     const meshesToDispose = Object.values(chunk.meshes);
 

@@ -3,8 +3,8 @@ import { BaseMob } from './BaseMob.js';
 import { BlockDict } from '../Blocks.js';
 
 export class PassiveMob extends BaseMob {
-    constructor(world, startPos, config, player) {
-        super(world, startPos, config);
+    constructor(world, startPos, config, player, modelTemplate) {
+        super(world, startPos, config, modelTemplate);
 
         this.config;
         this.player = player;

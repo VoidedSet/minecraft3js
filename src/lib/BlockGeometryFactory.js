@@ -53,7 +53,7 @@ export class BlockGeometryFactory {
             geo.name = cacheKey
             geo.translate(0, -0.2, 0);
         } else if (type === 'water') {
-            const height = (level / 8) * 1.0 - 0.2; // full block = 1
+            const height = (level / 8) * 1.0 - 0.1; // full block = 1
             geo = new THREE.BoxGeometry(1, height, 1);
             geo.name = cacheKey
             geo.translate(0, -0.2, 0)

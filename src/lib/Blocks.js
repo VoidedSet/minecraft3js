@@ -40,7 +40,7 @@ export const BlockDict = {
         id: 3,
         name: "Water",
         isSolid: false,
-        isTransparent: true,
+        isTransparent: false,
         isAnimated: true,
         isLuminous: false, animation: {
             type: 'scroll',      // How many frames in your strip?

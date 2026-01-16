@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/Addons.js';
 
 import { Mobs, MobType } from './Mobs.js';
 import { PassiveMob } from './PassiveMob.js';
 import { AggressiveMob } from './AggressiveMob.js';
+import { NeutralMob } from './NeutralMob.js';
 import { BlockDict } from '../Blocks.js';
 
 const GLOBAL_MOB_CAP = 32;
@@ -15,6 +17,31 @@ export class MobManager {
         this.mobs = [];
         this.savedMobs = new Map();
         this.currentIsNight = false;
+
+        // Model Caching
+        this.modelTemplates = new Map();
+        this.areModelsLoaded = false;
+        this.loadAssets();
+
+        this.angrySpecies = {};
+    }
+
+    loadAssets() {
+        const loader = new GLTFLoader();
+        loader.load('/assets/models.glb', (gltf) => {
+            console.log("Mob models loaded.");
+
+            gltf.scene.traverse((child) => {
+                if (child.isMesh || child.isGroup) {
+                    if (child.parent === gltf.scene) {
+                        this.modelTemplates.set(child.name, child);
+                    }
+                }
+            });
+            this.areModelsLoaded = true;
+        }, undefined, (error) => {
+            console.error("Error loading mob models:", error);
+        });
     }
 
     getSavedMobCount() {
@@ -25,21 +52,25 @@ export class MobManager {
         return count;
     }
 
+    triggerAnger(speciesName) {
+        if (!this.angrySpecies[speciesName]) {
+            this.angrySpecies[speciesName] = true;
+            console.log(`The ${speciesName}s are angry!`);
+        }
+    }
+
+    isSpeciesAngry(speciesName) {
+        return !!this.angrySpecies[speciesName];
+    }
+
     disposeMob(mob) {
         this.world.scene.remove(mob.mesh);
-
         requestAnimationFrame(() => {
             mob.mesh.traverse((child) => {
                 if (child.isMesh) {
-                    if (child.geometry) child.geometry.dispose();
-
                     if (child.material) {
                         const materials = Array.isArray(child.material) ? child.material : [child.material];
-
-                        materials.forEach(mat => {
-                            if (mat.map) mat.map.dispose();
-                            mat.dispose();
-                        });
+                        materials.forEach(mat => mat.dispose());
                     }
                 }
             });
@@ -65,7 +96,8 @@ export class MobManager {
                     pos: { x: mob.position.x, y: mob.position.y, z: mob.position.z },
                     health: mob.health,
                     isBaby: mob.isBaby,
-                    hasInteracted: true
+                    hasInteracted: true,
+                    isTamed: mob.isTamed || false
                 });
             }
             this.disposeMob(mob);
@@ -93,7 +125,8 @@ export class MobManager {
                         pos: { x: p.x, y: p.y, z: p.z },
                         health: mob.health,
                         isBaby: mob.isBaby,
-                        hasInteracted: true
+                        hasInteracted: true,
+                        isTamed: mob.isTamed || false
                     });
                 }
 
@@ -112,85 +145,122 @@ export class MobManager {
 
     loadMobs(cx, cz) {
         const key = `${this.world.dimension}:${cx},${cz}`;
-
-        // 1. Restore Saved Mobs (Always allowed, ignores cap)
         if (this.savedMobs.has(key)) {
             const savedList = this.savedMobs.get(key);
             for (const data of savedList) {
-                this.spawnMob(data.name, new THREE.Vector3(data.pos.x, data.pos.y, data.pos.z), data);
+                const mob = this.spawnMob(data.name, new THREE.Vector3(data.pos.x, data.pos.y, data.pos.z));
+                if (mob) {
+                    mob.health = data.health;
+                    mob.isBaby = data.isBaby;
+                    mob.hasInteracted = true;
+                    if (data.isTamed) mob.isTamed = true;
+                    if (mob.isBaby) mob.mesh.scale.set(0.5, 0.5, 0.5);
+                }
             }
             this.generateAggressiveMobs(cx, cz);
-        }
-        // 2. Generate NEW Mobs (Respects Cap)
-        else {
+        } else {
             this.generateMobsForChunk(cx, cz);
         }
     }
 
     generateMobsForChunk(cx, cz) {
-        // --- CHECK 1: Global Mob Cap ---
+        if (!this.areModelsLoaded) return;
         if (this.mobs.length >= GLOBAL_MOB_CAP) return;
 
-        const chunkSize = this.world.chunkSize;
-        const wx = cx * chunkSize;
-        const wz = cz * chunkSize;
-        const biome = this.world.getBiome(wx + 8, wz + 8);
+        const attempts = Math.floor(Math.random() * 3) + 1;
 
-        let possibleMobs = [];
-
-        if (this.world.dimension === 'nether') {
-            possibleMobs = ['zombie_pigman']
-        } else {
-            if (this.currentIsNight) {
-                possibleMobs = ['zombie'];
-            } else {
-                if (biome === 'plains' || biome === 'hills') {
-                    possibleMobs = ['cow', 'pig'];
-                } else if (biome === 'mountains') {
-                    possibleMobs = ['cow', 'dogs'];
-                }
-            }
-        }
-
-        if (possibleMobs.length === 0) return;
-        if (Math.random() > 0.3) return;
-
-        const mobType = possibleMobs[Math.floor(Math.random() * possibleMobs.length)];
-        const count = Math.floor(Math.random() * 3) + 1;
-
-        for (let i = 0; i < count; i++) {
-            // Check cap again inside loop
+        for (let i = 0; i < attempts; i++) {
             if (this.mobs.length >= GLOBAL_MOB_CAP) break;
 
+            // 30% chance to skip (controls density)
+            if (Math.random() > 0.7) continue;
+
+            const chunkSize = this.world.chunkSize;
             const lx = Math.floor(Math.random() * chunkSize);
             const lz = Math.floor(Math.random() * chunkSize);
-            const gx = wx + lx;
-            const gz = wz + lz;
+            const gx = (cx * chunkSize) + lx;
+            const gz = (cz * chunkSize) + lz;
 
-            let gy = 100;
-            for (let y = 50; y > 15; y--) {
-                if (this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz)) === BlockDict.grass.id || this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz)) === BlockDict.netherrack.id) {
-                    gy = y + 2;
-                    break;
+            // --- SCANNING LOGIC FIXED ---
+            let gy = -1;
+
+            if (this.world.dimension === 'nether') {
+                for (let y = 33; y < 65; y++) {
+                    const blockId = this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz));
+
+                    // Valid Floor: Solid, Not Air, Not Lava
+                    if (blockId !== BlockDict.air.id && blockId !== BlockDict.lava.id && blockId !== BlockDict.water.id) {
+                        const blockAbove = this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y + 1, gz));
+
+                        if (blockAbove === BlockDict.air.id) {
+                            gy = y + 1;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // OVERWORLD: Scan Top-Down
+                // Start high enough to clear mountains
+                for (let y = 85; y > 12; y--) {
+                    const blockId = this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y, gz));
+
+                    if (blockId === BlockDict.grass.id || blockId === BlockDict.dirt.id || blockId === BlockDict.snow) {
+                        const blockAbove = this.world.chunkManager.returnBlockId(new THREE.Vector3(gx, y + 1, gz));
+
+                        if (blockAbove === BlockDict.air.id) {
+                            gy = y + 1;
+                            console.log(gy)
+                            break
+                        }
+                    }
                 }
             }
 
-            if (gy === 100)
-                return
-            this.spawnMob(mobType, new THREE.Vector3(gx + 0.5, gy, gz + 0.5));
-        }
+            if (gy === -1) continue;
 
-        // Try spawning enemies if space allows
-        if (this.mobs.length < GLOBAL_MOB_CAP) {
-            this.generateAggressiveMobs(cx, cz);
+            // --- MOB SELECTION ---
+            let mobType = null;
+
+            if (this.world.dimension === 'nether') {
+                if (gy > 50 && gy < 65)
+                    mobType = 'zombie';
+                else
+                    mobType = 'zombie_pigman';
+            } else if (this.currentIsNight) {
+                mobType = 'zombie';
+            } else {
+                const biome = this.world.getBiome(gx, gz);
+                const options = [];
+
+                if (biome === 'plains') {
+                    options.push('pig', 'pig', 'pig', 'cow', 'cow');
+                } else if (biome === 'hills') {
+                    options.push('cow');
+                } else if (biome === 'mountains') {
+                    options.push('dog');
+                } else {
+                    options.push('pig', 'cow');
+                }
+
+                if (options.length > 0) {
+                    mobType = options[Math.floor(Math.random() * options.length)];
+                }
+            }
+
+            if (mobType) {
+                console.log(mobType)
+                this.spawnMob(mobType, new THREE.Vector3(gx + 0.5, gy, gz + 0.5));
+            }
         }
     }
 
     generateAggressiveMobs(cx, cz) {
+        if (!this.areModelsLoaded) return;
         if (this.mobs.length >= GLOBAL_MOB_CAP) return;
 
-        if (this.world.dimension === 'overworld' && Math.random() < 0.05) {
-            // ... (Add zombie logic here later) ...
+        // Small chance to spawn occasional zombies even if chunk is loaded
+        if (this.world.dimension === 'overworld' && this.currentIsNight && Math.random() < 0.05) {
+            // Logic similar to generateMobsForChunk but strictly for zombies
         }
     }
 
@@ -198,41 +268,48 @@ export class MobManager {
         const config = Mobs[mobName];
         if (!config) {
             console.warn(`Mob '${mobName}' not found in Mobs.js`);
-            return;
+            return null;
         }
+
+        const modelTemplate = this.modelTemplates.get(config.modelSrc);
+        if (!modelTemplate) return null;
 
         let mob;
         if (config.type === MobType.PASSIVE) {
-            mob = new PassiveMob(this.world, pos, config, this.player);
+            mob = new PassiveMob(this.world, pos, config, this.player, modelTemplate);
         } else if (config.type === MobType.AGGRESSIVE) {
-            mob = new AggressiveMob(this.world, pos, config, this.player);
+            mob = new AggressiveMob(this.world, pos, config, this.player, modelTemplate);
+        } else if (config.type === MobType.NEUTRAL) {
+            mob = new NeutralMob(this.world, pos, config, this.player, modelTemplate);
         }
 
         if (mob) {
             this.mobs.push(mob);
         }
+        return mob;
     }
 
     spawnBaby(mobName, pos) {
         const config = Mobs[mobName];
         if (!config) return;
 
+        const modelTemplate = this.modelTemplates.get(config.modelSrc);
         let baby;
+
         if (config.type === MobType.PASSIVE) {
-            baby = new PassiveMob(this.world, pos, config, this.player);
+            baby = new PassiveMob(this.world, pos, config, this.player, modelTemplate);
+        } else if (config.type === MobType.NEUTRAL) {
+            baby = new NeutralMob(this.world, pos, config, this.player, modelTemplate);
+            baby.isTamed = true;
         }
 
         if (baby) {
             baby.isBaby = true;
-
             baby.mesh.scale.set(0.5, 0.5, 0.5);
-
             baby.collider.size.multiplyScalar(0.5);
             baby.collider.offset.multiplyScalar(0.5);
-            console.log(this.mobs)
 
             this.mobs.push(baby);
-            console.log(this.mobs)
             console.log("A baby was born!");
         }
     }
@@ -250,7 +327,7 @@ export class MobManager {
                 mob.update(delta);
             }
 
-            if (mob.config.type === MobType.AGGRESSIVE && !isNight) {
+            if (mob.config.type === MobType.AGGRESSIVE && !isNight && this.world.dimension === 'overworld') {
                 mob.takeDamage(delta * 0.1, mob.position);
                 if (Math.random() < 0.1) mob.flashRed();
             }

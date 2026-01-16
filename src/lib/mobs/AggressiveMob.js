@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { BaseMob } from './BaseMob.js';
 
 export class AggressiveMob extends BaseMob {
-    constructor(world, startPos, config, player) {
-        super(world, startPos, config);
+    constructor(world, startPos, config, player, modelTemplate) {
+        super(world, startPos, config, modelTemplate);
         this.player = player;
     }
 
