@@ -1,28 +1,3 @@
-<!-- <h1>Overview</h1>
-Minecraft Remake in js 😎
-
-Currently it can genrate decent terrains with 3 different biomes: Mountains, Plains and Oceans. Major highlight is smooth transition between chunks with different biomes.
-It can generate chunks and unload chunks that are not needed!
-<br>
-Physics is done its a simple implementation from scratch<br>
-some day i will surely add fluid mechanics aswell <br>
-
-<h3>To Do</h3>
-
-Saving the world<br>
-Structures<br>
-Mobs (and their ai)<br>
-Improve existing tree gen<br>
-Animations(block breaking, water etc)<br>
-Improved Biomes and biome specific blocks and trees<br>
-add boss fights<br>
-game mechanics <br>
-
-<h1>Installation</h1><br>
-<code>npm install</code> to install packages<br>
-<br><code>npx vite</code> to run
- -->
-
 <h1>Minecraft for Browsers!</h1>
 Minecraft-ish clone in Three.js with procedural terrain, Nether dimension, mobs, and animated fluids.
 
@@ -35,9 +10,16 @@ I grew up playing Minecraft and always wondered how its world actually worked. R
 
 After working on it, I have a much deeper appreciation for how tightly controlled the randomness and chaos is in Minecraft’s generation systems.
 
+Overworld
+<img width="1761" height="935" alt="image" src="https://github.com/user-attachments/assets/804dde62-6ee3-4033-8326-7c60039f3338" />Structure Generation <br>
+<img width="1487" height="889" alt="Screenshot 2025-04-12 162948" src="https://github.com/user-attachments/assets/c065d918-c0c6-4ffe-a34c-4bfb83b27667" />Nether <br>
+<img width="1752" height="939" alt="image" src="https://github.com/user-attachments/assets/abe78862-99ef-4600-beb5-d815305f112f" />
+<img src="https://github.com/user-attachments/assets/c88254ed-6c8c-402c-9951-bc2609916a2d" /> <img src="https://github.com/user-attachments/assets/da1be30a-943d-443e-b934-62241f141f30" /> <br>Animated Fluids
+
 ---
 <h2>Feature List</h2>
 <h4>v1: Core System</h4>
+
 - terrain gen
 - chunk streaming + caching
 - mesh culling + instancing
@@ -48,6 +30,7 @@ After working on it, I have a much deeper appreciation for how tightly controlle
 - day/night cycle
 <br>
 <h4>v2: Upgrades</h4>
+
 - Nether dimension (multi-layer terrain)
 - mob system (AI + spawn manager + caching)
 - fluid UV animations (water/lava)
@@ -58,6 +41,7 @@ After working on it, I have a much deeper appreciation for how tightly controlle
 
 ---
 <h2>Install</h2>
+
 - Install the required modules
 ```npm install```
 
@@ -66,6 +50,7 @@ After working on it, I have a much deeper appreciation for how tightly controlle
 
 ---
 <h2>Roadmap</h2>
+
 - survival mechanics
 - crafting + inventory
 - mob drops
@@ -75,6 +60,7 @@ After working on it, I have a much deeper appreciation for how tightly controlle
 
 ---
 <h2>What I Learned</h2>
+
 - procedural gen is controlled randomness
 - browser memory matters a lot for chunked worlds
 - instancing + caching saves your life
